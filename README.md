@@ -6,7 +6,7 @@
 
 | Curso                                                                      | Certificado                                                                                                                                               |
 | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <b>Java: trabalhando com lambdas, streams e Spring Framework </b>                           | <center><a href="">link</a></center>  |
+| <b>Java: trabalhando com lambdas, streams e Spring Framework </b>                           | <center><a href="https://cursos.alura.com.br/certificate/joaovictorlisboaporcel/java-trabalhando-lambdas-streams-spring-framework">link</a></center>  |
 | <b>Java: persistência de dados e consultas com Spring Data JPA</b>                 | <center><a href="">ainda estudando</a></center>                           |
 | <b>Java: criando sua primeira API e conectando ao front</b>                 | <center><a href="">ainda estudando</a></center>                           |
 
