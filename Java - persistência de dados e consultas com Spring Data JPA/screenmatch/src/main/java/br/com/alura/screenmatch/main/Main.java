@@ -1,113 +1,124 @@
 package br.com.alura.screenmatch.main;
 
-import br.com.alura.screenmatch.model.DadosEpisodios;
-import br.com.alura.screenmatch.model.DadosSerie;
-import br.com.alura.screenmatch.model.DadosTemporada;
-import br.com.alura.screenmatch.model.Episodio;
+import br.com.alura.screenmatch.model.*;
 import br.com.alura.screenmatch.service.ConsumoAPI;
 import br.com.alura.screenmatch.service.ConverteDados;
-import ch.qos.logback.core.encoder.JsonEscapeUtil;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MainNovo {
+public class Main {
 
-    private Scanner ler = new Scanner(System.in);
+    private Scanner lerString = new Scanner(System.in);
+    private Scanner lerInt = new Scanner(System.in);
+
     private ConsumoAPI consumoAPI = new ConsumoAPI();
     private ConverteDados conversor = new ConverteDados();
 
     private final String ENDERECO = "https://www.omdbapi.com/?t=";
     private final String API_KEY = "&apikey=6585022c";
+    private List<DadosSerie> dadosSeries = new ArrayList<>();
 
     public void consultarAPI() {
-        System.out.println("\nDigite o nome da série para efetuar a consulta: ");
-        var nome = ler.nextLine();
-        var json = consumoAPI.obterDados(ENDERECO + nome.replace(" ", "+") + API_KEY);
+        int opcao;
+        do {
+            System.out.println("\nDeseja pesquisar alguma série? (1-SIM | 0-NÃO)");
+            opcao = lerInt.nextInt(); // Agora 'opcao' controla os dois laços
 
-        //Apresenta dados da série
-        DadosSerie dados = conversor.obterDados(json, DadosSerie.class);
-        if (dados.titulo() == null) {
-            System.out.println("\nNenhum resultado encontrado.");
-        } else {
-            List<DadosTemporada> temporadas = new ArrayList<DadosTemporada>();
-            List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = new ArrayList<DadosEpisodios>();
-            List<Episodio> episodios = new ArrayList<Episodio>();
+            if (opcao != 0) {
+                System.out.println("\nDigite o nome da série para efetuar a consulta: ");
+                var nome = lerString.nextLine();
+                var json = consumoAPI.obterDados(ENDERECO + nome.replace(" ", "+") + API_KEY);
 
-            int op = 0;
-            do {
-                apresentarMenuDeOpcoes();
-                System.out.println("\n\nSelecione uma das opções do menu para prosseguir: ");
-                op = ler.nextInt();
-                ler.nextLine();
+                //Apresenta dados da série
+                DadosSerie dados = conversor.obterDados(json, DadosSerie.class);
+                if (dados.titulo() == null) {
+                    System.out.println("\nNenhum resultado encontrado.");
+                } else {
+                    List<DadosTemporada> temporadas = new ArrayList<DadosTemporada>();
+                    List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = new ArrayList<DadosEpisodios>();
+                    List<Episodio> episodios = new ArrayList<Episodio>();
+                    dadosSeries.add(dados);
+                    int op = 0;
+                    do {
+                        apresentarMenuDeOpcoes();
+                        System.out.println("\n\nSelecione uma das opções do menu para prosseguir: ");
+                        op = lerInt.nextInt();
 
-                switch (op) {
-                    case 1:
-                        temporadas = apresentandoTodosOsEpisodiosETemporadas(temporadas, json, nome, dados);
-                        break;
-                    case 2:
-                        //Não roda se a lista de temporadas não estiver populada
-                        if (temporadas.isEmpty())
-                            System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                        else
-                            apresentandoTodosOsTitulos(temporadas);
-                        break;
-                    case 3:
-                        //Não roda se a lista de temporadas não estiver populada
-                        if (temporadas.isEmpty())
-                            System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                        else
-                            todosEpisodiosDeTodasTemporadas = utilizandoStreamsELambdas(temporadas);
-                        break;
-                    case 4:
-                        //Não roda se não tiver a lista de todos os eps e todas as temporadas populadas
-                        if (temporadas.isEmpty() || todosEpisodiosDeTodasTemporadas.isEmpty())
-                            System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                        else
-                            apresentandoDezMaisAvaliados(todosEpisodiosDeTodasTemporadas);
-                        break;
-                    case 5:
-                        if (temporadas.isEmpty())
-                            System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                        else
-                            episodios = apresentandoEpisodiosETemporadasPorConstrutor(temporadas);
-                        break;
-                    case 6:
-                        if (temporadas.isEmpty() || episodios.isEmpty())
-                            System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                        else
-                            apresentarEpisodiosAPartirDeUmAno(episodios);
-                        break;
-                    case 7:
-                        if (temporadas.isEmpty() || episodios.isEmpty())
-                            System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                        else
-                            apresentarTemporadaPorEpisodio(episodios);
-                        break;
-                    case 8:
-                        if (temporadas.isEmpty() || episodios.isEmpty())
-                            System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                        else
-                            apresentarAvaliacoesPorTemporada(episodios);
-                        break;
-                    case 9:
-                        if (temporadas.isEmpty() || episodios.isEmpty())
-                            System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                        else
-                            apresentarEstatisticas(episodios);
-                        break;
-                    case 0:
-                        System.out.println("\nEncerrando o programa.");
-                        break;
-                    default:
-                        System.out.println("\nOpção inválida.");
-                        break;
+                        switch (op) {
+                            case 1:
+                                temporadas = apresentandoTodosOsEpisodiosETemporadas(temporadas, json, nome, dados);
+                                break;
+                            case 2:
+                                //Não roda se a lista de temporadas não estiver populada
+                                if (temporadas.isEmpty())
+                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
+                                else
+                                    apresentandoTodosOsTitulos(temporadas);
+                                break;
+                            case 3:
+                                //Não roda se a lista de temporadas não estiver populada
+                                if (temporadas.isEmpty())
+                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
+                                else
+                                    todosEpisodiosDeTodasTemporadas = utilizandoStreamsELambdas(temporadas);
+                                break;
+                            case 4:
+                                //Não roda se não tiver a lista de todos os eps e todas as temporadas populadas
+                                if (temporadas.isEmpty() || todosEpisodiosDeTodasTemporadas.isEmpty())
+                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
+                                else
+                                    apresentandoDezMaisAvaliados(todosEpisodiosDeTodasTemporadas);
+                                break;
+                            case 5:
+                                if (temporadas.isEmpty())
+                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
+                                else
+                                    episodios = apresentandoEpisodiosETemporadasPorConstrutor(temporadas);
+                                break;
+                            case 6:
+                                if (temporadas.isEmpty() || episodios.isEmpty())
+                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
+                                else
+                                    apresentarEpisodiosAPartirDeUmAno(episodios);
+                                break;
+                            case 7:
+                                if (temporadas.isEmpty() || episodios.isEmpty())
+                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
+                                else
+                                    apresentarTemporadaPorEpisodio(episodios);
+                                break;
+                            case 8:
+                                if (temporadas.isEmpty() || episodios.isEmpty())
+                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
+                                else
+                                    apresentarAvaliacoesPorTemporada(episodios);
+                                break;
+                            case 9:
+                                if (temporadas.isEmpty() || episodios.isEmpty())
+                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
+                                else
+                                    apresentarEstatisticas(episodios);
+                                break;
+                            case 10:
+                                System.out.println("\nApresentando todas as séries pesquisadas:");
+                                listarSeriesBuscadas();
+                                break;
+                            case 0:
+                                System.out.println("\nEncerrando a busca.");
+                                break;
+                            default:
+                                System.out.println("\nOpção inválida.");
+                                break;
+                        }
+                    } while (op != 0);
                 }
-            } while (op != 0);
-
-        }
+            } else {
+                System.out.println("\nEncerrando o programa.");
+            }
+        } while (opcao != 0);
     }
 
     public void apredendoSobreStreams() {
@@ -148,6 +159,8 @@ public class MainNovo {
         System.out.println("7 - Apresentar temporada por um episódio.");
         System.out.println("8 - Apresentar média de avaliações por temporada.");
         System.out.println("9 - Apresentar estatísticas");
+        System.out.println("-----------------------------------------------------");
+        System.out.println("10 - Apresentar todas as séries pesquisadas");
         System.out.println("0 - Encerrar Programa.");
     }
 
@@ -163,24 +176,9 @@ public class MainNovo {
 
     //2
     public void apresentandoTodosOsTitulos(List<DadosTemporada> temporadas) {
-        // Apresentar todos os títulos (forma não convencional)
-        //        for(int i=0; i<dados.totalTemporadas();i++){
-        //            List<DadosEpisodios> epsTemporada = temporadas.get(i).episodios();
-        //            for(int j=0; j<epsTemporada.size();j++){
-        //                System.out.println(epsTemporada.get(j).titulo());
-        //            }
-        //        }
-
         // Apresentar todos os títulos (forma convencional)
         System.out.println("\n\nApresentando todos os títulos de episódios:");
         temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println("| " + e.titulo() + " |")));
-
-        /*
-         OBS.: As -> são chamadas de lambdas (funções anônimas)
-         elas são uma maneira de definir funções que são
-         frequentemente usadas uma única vez, direto no
-         local onde serão usadas.
-        */
     }
 
     //3
@@ -190,16 +188,7 @@ public class MainNovo {
         List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = temporadas.stream()
                 .flatMap(t -> t.episodios().stream())
                 .collect(Collectors.toList());
-        //.toList();
-
-        //Adicionando um episódio extra na coleção
-        //todosEpisodiosDeTodasTemporadas.add(new DadosEpisodios("teste", 3, "9.0", "2020-01-01"));
         todosEpisodiosDeTodasTemporadas.forEach(System.out::println);
-
-        /*
-        OBS.: O toList nos dá uma lista imutável, não é possível realizar alterações.
-        Em contrapartida, o Collectors nos apresenta uma coleção que é passiva de mudanças futuras.
-        */
 
         return todosEpisodiosDeTodasTemporadas;
     }
@@ -237,8 +226,8 @@ public class MainNovo {
     public void apresentarEpisodiosAPartirDeUmAno(List<Episodio> episodios) {
 
         System.out.println("\nA partir de que ano você quer ver estes episódios?");
-        var ano = ler.nextInt();
-        ler.nextLine();
+        var ano = lerInt.nextInt();
+        lerInt.nextLine();
 
         System.out.println("\nApresentando episódios a partir do ano de " + ano + ": ");
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyy");
@@ -262,7 +251,7 @@ public class MainNovo {
     //7
     public void apresentarTemporadaPorEpisodio(List<Episodio> episodios) {
         System.out.println("\nDigite o título de um episódio: ");
-        var tituloEpisodio = ler.nextLine();
+        var tituloEpisodio = lerString.nextLine();
         //Optional é utilizado quando os valores podem ou não serem retornados
         Optional<Episodio> episodioBuscado = episodios.stream()
                 .filter(e -> e.getTitulo().contains(tituloEpisodio))
@@ -303,4 +292,15 @@ public class MainNovo {
                 + "\n* Quantidade de episódios avaliados: " + est.getCount());
     }
 
+    //10
+    public void listarSeriesBuscadas() {
+        List<Serie> series = dadosSeries.stream()
+                .map(Serie::new) // Converte DadosSerie para Serie
+                .sorted(Comparator.comparing(Serie::getCategoria))
+                .collect(Collectors.toList());
+
+        System.out.println("\nApresentando o array de series");
+        series.forEach(System.out::println);
+    }
 }
+
