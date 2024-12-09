@@ -1,7 +1,8 @@
 package br.com.alura.screenmatch.model;
 
 import br.com.alura.screenmatch.enums.Categoria;
-import br.com.alura.screenmatch.service.TraduzirComAPI;
+import br.com.alura.screenmatch.service.traducaoOpenAI.TraduzirComAPI;
+import br.com.alura.screenmatch.service.traducaoMyMemory.ConsultaMyMemory;
 
 import java.util.OptionalDouble;
 
@@ -21,15 +22,21 @@ public class Serie {
         this.categoria = Categoria.fromString(dadosSerie.categoria().split(",")[0].trim());
         this.atores = dadosSerie.atores();
         this.poster = dadosSerie.poster();
-        this.sinopse = dadosSerie.sinopse();
-//        try {
-//            // Utilize a sinopse recebida nos dados
-//            this.sinopse = TraduzirComAPI.obterTraducao(dadosSerie.sinopse());
-//        } catch (Exception e) {
-//            throw new RuntimeException("Erro ao traduzir a sinopse", e);
-//        }
+        traduzirSinopse(dadosSerie.sinopse());
     }
 
+    public void traduzirSinopse(String sinopse){
+        try {
+            this.sinopse = TraduzirComAPI.obterTraducao(sinopse).trim();
+        } catch (Exception e) {
+            try{
+                this.sinopse = ConsultaMyMemory.obterTraducao(sinopse);
+            }catch(Exception ex){
+                //Se não funcionar a tradução, apresenta em inglês mesmo.
+                this.sinopse = sinopse;
+            }
+        }
+    }
 
     public String getTitulo() {
         return titulo;
@@ -80,12 +87,6 @@ public class Serie {
     }
 
     public String getSinopse() {
-        try {
-            // Utilize a sinopse recebida nos dados
-            this.sinopse = TraduzirComAPI.obterTraducao(sinopse);
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao traduzir a sinopse", e);
-        }
         return sinopse;
     }
 
