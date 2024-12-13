@@ -1,15 +1,17 @@
 package br.com.alura.screenmatch.main;
 
 import br.com.alura.screenmatch.model.*;
+import br.com.alura.screenmatch.repository.SerieRepository;
 import br.com.alura.screenmatch.service.ConsumoAPI;
 import br.com.alura.screenmatch.service.ConverteDados;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Main {
+public class Main{
 
     private Scanner lerString = new Scanner(System.in);
     private Scanner lerInt = new Scanner(System.in);
@@ -20,6 +22,12 @@ public class Main {
     private final String ENDERECO = "https://www.omdbapi.com/?t=";
     private final String API_KEY = "&apikey=6585022c";
     private List<DadosSerie> dadosSeries = new ArrayList<>();
+
+    private SerieRepository serieRepository;
+
+    public Main(SerieRepository serieRepository) {
+        this.serieRepository = serieRepository;
+    }
 
     public void consultarAPI() {
         int opcao;
@@ -40,7 +48,14 @@ public class Main {
                     List<DadosTemporada> temporadas = new ArrayList<DadosTemporada>();
                     List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = new ArrayList<DadosEpisodios>();
                     List<Episodio> episodios = new ArrayList<Episodio>();
-                    dadosSeries.add(dados);
+
+                    //dadosSeries.add(dados);
+
+                    //salvando no banco de dados
+                    Serie serie = new Serie(dados);
+                    serieRepository.save(serie);
+
+
                     int op = 0;
                     do {
                         apresentarMenuDeOpcoes();
@@ -294,13 +309,11 @@ public class Main {
 
     //10
     public void listarSeriesBuscadas() {
-        List<Serie> series = dadosSeries.stream()
-                .map(Serie::new) // Converte DadosSerie para Serie
-                .sorted(Comparator.comparing(Serie::getCategoria))
-                .collect(Collectors.toList());
-
         System.out.println("\nApresentando o array de series");
-        series.forEach(System.out::println);
+        List<Serie> series = serieRepository.findAll();
+        series.stream()
+                .sorted(Comparator.comparing(Serie::getCategoria))
+                .forEach(System.out::println);
     }
 }
 

@@ -3,17 +3,45 @@ package br.com.alura.screenmatch.model;
 import br.com.alura.screenmatch.enums.Categoria;
 import br.com.alura.screenmatch.service.traducaoOpenAI.TraduzirComAPI;
 import br.com.alura.screenmatch.service.traducaoMyMemory.ConsultaMyMemory;
+import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.OptionalDouble;
 
+@Entity
+@Table(name="serie")
 public class Serie {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "titulo", unique=true)
     private String titulo;
+
+    @Column(name = "totalTemporadas")
     private Integer totalTemporadas;
+
+    @Column(name = "avaliacao")
     private Double avaliacao;
+
+    @Enumerated(EnumType.STRING)
     private Categoria categoria;
+
+    @Column(name = "atores")
     private String atores;
+
+    @Column(name = "poster")
     private String poster;
+
+    @Column(name = "sinopse")
     private String sinopse;
+
+    //Por enquanto deixa quieto e não salva no banco
+    @Transient
+    private List<Episodio> episodios = new ArrayList<>();
+
 
     public Serie(DadosSerie dadosSerie) {
         this.titulo = dadosSerie.titulo();
@@ -36,6 +64,14 @@ public class Serie {
                 this.sinopse = sinopse;
             }
         }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getTitulo() {
@@ -92,6 +128,14 @@ public class Serie {
 
     public void setSinopse(String sinopse) {
         this.sinopse = sinopse;
+    }
+
+    public List<Episodio> getEpisodios() {
+        return episodios;
+    }
+
+    public void setEpisodios(List<Episodio> episodios) {
+        this.episodios = episodios;
     }
 
     @Override
