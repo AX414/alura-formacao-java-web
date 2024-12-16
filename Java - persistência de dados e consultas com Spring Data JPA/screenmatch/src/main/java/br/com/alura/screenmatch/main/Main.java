@@ -4,14 +4,17 @@ import br.com.alura.screenmatch.model.*;
 import br.com.alura.screenmatch.repository.SerieRepository;
 import br.com.alura.screenmatch.service.ConsumoAPI;
 import br.com.alura.screenmatch.service.ConverteDados;
-import org.springframework.beans.factory.annotation.Autowired;
+import tech.tablesaw.api.DoubleColumn;
+import tech.tablesaw.api.IntColumn;
+import tech.tablesaw.api.StringColumn;
+import tech.tablesaw.api.Table;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Main{
+public class Main {
 
     private Scanner lerString = new Scanner(System.in);
     private Scanner lerInt = new Scanner(System.in);
@@ -49,20 +52,26 @@ public class Main{
                     List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = new ArrayList<DadosEpisodios>();
                     List<Episodio> episodios = new ArrayList<Episodio>();
 
-                    //dadosSeries.add(dados);
+                    verificaUnicidadeNoBD(dados);
 
-                    //salvando no banco de dados
-                    Serie serie = new Serie(dados);
-                    serieRepository.save(serie);
-
-
-                    int op = 0;
                     do {
-                        apresentarMenuDeOpcoes();
+                        System.out.println("\n<Menu>");
+                        System.out.println("1  -> Apresentar todos os episódios e temporadas.");
+                        System.out.println("2  -> Apresentar todos os títulos de episódios.");
+                        System.out.println("3  -> Apresentar utilizando streams e lambdas.");
+                        System.out.println("4  -> Apresentar os dez mais avaliados.");
+                        System.out.println("5  -> Apresentar episódios e temporadas por um construtor personalizado.");
+                        System.out.println("6  -> Apresentar episódios a partir de um ano.");
+                        System.out.println("7  -> Apresentar temporada por um episódio.");
+                        System.out.println("8  -> Apresentar média de avaliações por temporada.");
+                        System.out.println("9  -> Apresentar estatísticas");
+                        System.out.println("_______________________________________________________");
+                        System.out.println("10 -> Apresentar todas as séries pesquisadas");
+                        System.out.println("0  -> Encerrar consulta.");
                         System.out.println("\n\nSelecione uma das opções do menu para prosseguir: ");
-                        op = lerInt.nextInt();
+                        opcao = lerInt.nextInt();
 
-                        switch (op) {
+                        switch (opcao) {
                             case 1:
                                 temporadas = apresentandoTodosOsEpisodiosETemporadas(temporadas, json, nome, dados);
                                 break;
@@ -128,55 +137,27 @@ public class Main{
                                 System.out.println("\nOpção inválida.");
                                 break;
                         }
-                    } while (op != 0);
+                    } while (opcao != 0);
                 }
             } else {
+                listarSeriesBuscadas();
                 System.out.println("\nEncerrando o programa.");
             }
         } while (opcao != 0);
     }
 
-    public void apredendoSobreStreams() {
-        {
-            //Aprendendo sobre Stream
-            List<String> letras = Arrays.asList("A", "B", "C", "D", "E");
-            //Ordenando o fluxo de dados e realizando uma ordenação
-            System.out.println("\nOrdenando em ordem alfabética a lista: ");
-            letras.stream()
-                    .sorted()
-                    .forEach(System.out::println);
+    public void verificaUnicidadeNoBD(DadosSerie dados) {
+        // Verifica se já existe uma série com o mesmo título
+        Optional<Serie> serieExistente = serieRepository.findByTitulo(dados.titulo());
 
-            //É possível limitar o fluxo de dados também
-            System.out.println("\nApresentando apenas 3 items da lista:");
-            letras.stream()
-                    .limit(3)
-                    .forEach(System.out::println);
-
-            //Também podemos utilizar filtros e realizar diversas
-            // operações intermediárias e encadeadas
-            System.out.println("\nApresentando a letra B em minúscula:");
-            letras.stream()
-                    .limit(3)
-                    .filter(l -> l.startsWith("B"))
-                    .map(l -> l.toLowerCase())
-                    .forEach(System.out::println);
+        if (serieExistente.isEmpty()) {
+            // Se não existir, salva a nova série
+            Serie serie = new Serie(dados);
+            serieRepository.save(serie);
+        } else {
+            // Caso já exista, pode exibir uma mensagem ou tomar outra ação
+            System.out.println("\nSérie com o título '" + dados.titulo() + "' já existe no banco de dados.\n");
         }
-    }
-
-    public void apresentarMenuDeOpcoes() {
-        System.out.println("\n<Menu>");
-        System.out.println("1 - Apresentar todos os episódios e temporadas.");
-        System.out.println("2 - Apresentar todos os títulos de episódios.");
-        System.out.println("3 - Apresentar utilizando streams e lambdas.");
-        System.out.println("4 - Apresentar os dez mais avaliados.");
-        System.out.println("5 - Apresentar episódios e temporadas por um construtor personalizado.");
-        System.out.println("6 - Apresentar episódios a partir de um ano.");
-        System.out.println("7 - Apresentar temporada por um episódio.");
-        System.out.println("8 - Apresentar média de avaliações por temporada.");
-        System.out.println("9 - Apresentar estatísticas");
-        System.out.println("-----------------------------------------------------");
-        System.out.println("10 - Apresentar todas as séries pesquisadas");
-        System.out.println("0 - Encerrar Programa.");
     }
 
     //1
@@ -309,11 +290,20 @@ public class Main{
 
     //10
     public void listarSeriesBuscadas() {
-        System.out.println("\nApresentando o array de series");
         List<Serie> series = serieRepository.findAll();
-        series.stream()
-                .sorted(Comparator.comparing(Serie::getCategoria))
-                .forEach(System.out::println);
+
+        // Colunas
+        StringColumn nomes = StringColumn.create("Nome", series.stream().map(Serie::getTitulo).toArray(String[]::new));
+        StringColumn categorias = StringColumn.create("Categoria", series.stream().map(serie -> serie.getCategoria().name()).toArray(String[]::new));
+        StringColumn atores = StringColumn.create("Atores", series.stream().map(Serie::getAtores).toArray(String[]::new));
+        IntColumn totalTemporadas = IntColumn.create("Total de Temporadas", series.stream().map(Serie::getTotalTemporadas).toArray(Integer[]::new));
+        DoubleColumn mediaAvaliacao = DoubleColumn.create("Média de Avaliação", series.stream().map(Serie::getAvaliacao).toArray(Double[]::new));
+
+        Table table = Table.create("Séries do BD:")
+                .addColumns(nomes, categorias, atores, totalTemporadas, mediaAvaliacao)
+                .sortAscendingOn("Nome");
+
+        System.out.println(table);
     }
 }
 
