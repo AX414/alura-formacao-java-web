@@ -1,6 +1,7 @@
 package br.com.alura.screenmatch.main;
 
 import br.com.alura.screenmatch.model.*;
+import br.com.alura.screenmatch.repository.EpisodioRepository;
 import br.com.alura.screenmatch.repository.SerieRepository;
 import br.com.alura.screenmatch.service.ConsumoAPI;
 import br.com.alura.screenmatch.service.ConverteDados;
@@ -26,24 +27,26 @@ public class Main {
     private final String API_KEY = "&apikey=6585022c";
     private List<DadosSerie> dadosSeries = new ArrayList<>();
 
-    private SerieRepository serieRepository;
+    private final SerieRepository serieRepository;
+    private final EpisodioRepository episodioRepository;
 
-    public Main(SerieRepository serieRepository) {
+    public Main(SerieRepository serieRepository, EpisodioRepository episodioRepository) {
         this.serieRepository = serieRepository;
+        this.episodioRepository = episodioRepository;
     }
 
     public void consultarAPI() {
         int opcao;
         do {
             System.out.println("\nDeseja pesquisar alguma série? (1-SIM | 0-NÃO)");
-            opcao = lerInt.nextInt(); // Agora 'opcao' controla os dois laços
+            opcao = lerInt.nextInt();
 
             if (opcao != 0) {
                 System.out.println("\nDigite o nome da série para efetuar a consulta: ");
                 var nome = lerString.nextLine();
                 var json = consumoAPI.obterDados(ENDERECO + nome.replace(" ", "+") + API_KEY);
 
-                //Apresenta dados da série
+                // Apresenta dados da série
                 DadosSerie dados = conversor.obterDados(json, DadosSerie.class);
                 if (dados.titulo() == null) {
                     System.out.println("\nNenhum resultado encontrado.");
@@ -52,7 +55,7 @@ public class Main {
                     List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = new ArrayList<DadosEpisodios>();
                     List<Episodio> episodios = new ArrayList<Episodio>();
 
-                    verificaUnicidadeNoBD(dados);
+                    verificaUnicidadeSerieNoBD(dados);
 
                     do {
                         System.out.println("\n<Menu>");
@@ -74,23 +77,32 @@ public class Main {
                         switch (opcao) {
                             case 1:
                                 temporadas = apresentandoTodosOsEpisodiosETemporadas(temporadas, json, nome, dados);
+
+                                //Para cada temporada
+                                for(int i = 0;i<temporadas.size();i++){
+                                    //Verifique cada episódio
+                                    for(int j = 0; j<temporadas.get(i).episodios().size();j++){
+                                        verificaUnicidadeEpisodioNoBD(dados.titulo(), temporadas.get(i).episodios().get(j));
+                                    }
+                                }
+
                                 break;
                             case 2:
-                                //Não roda se a lista de temporadas não estiver populada
+                                // Não roda se a lista de temporadas não estiver populada
                                 if (temporadas.isEmpty())
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     apresentandoTodosOsTitulos(temporadas);
                                 break;
                             case 3:
-                                //Não roda se a lista de temporadas não estiver populada
+                                // Não roda se a lista de temporadas não estiver populada
                                 if (temporadas.isEmpty())
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     todosEpisodiosDeTodasTemporadas = utilizandoStreamsELambdas(temporadas);
                                 break;
                             case 4:
-                                //Não roda se não tiver a lista de todos os eps e todas as temporadas populadas
+                                // Não roda se não tiver a lista de todos os eps e todas as temporadas populadas
                                 if (temporadas.isEmpty() || todosEpisodiosDeTodasTemporadas.isEmpty())
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
@@ -131,7 +143,8 @@ public class Main {
                                 listarSeriesBuscadas();
                                 break;
                             case 0:
-                                System.out.println("\nEncerrando a busca.");
+                                // Ao encerrar a consulta, pergunta novamente se deseja pesquisar outra série
+                                System.out.println("\nEncerrando a consulta.");
                                 break;
                             default:
                                 System.out.println("\nOpção inválida.");
@@ -140,13 +153,14 @@ public class Main {
                     } while (opcao != 0);
                 }
             } else {
+                // Retorna à pergunta inicial para pesquisar outra série ou encerrar
                 listarSeriesBuscadas();
-                System.out.println("\nEncerrando o programa.");
+                System.out.println("\nDeseja pesquisar outra série?");
             }
         } while (opcao != 0);
     }
 
-    public void verificaUnicidadeNoBD(DadosSerie dados) {
+    public void verificaUnicidadeSerieNoBD(DadosSerie dados) {
         // Verifica se já existe uma série com o mesmo título
         Optional<Serie> serieExistente = serieRepository.findByTitulo(dados.titulo());
 
@@ -154,9 +168,18 @@ public class Main {
             // Se não existir, salva a nova série
             Serie serie = new Serie(dados);
             serieRepository.save(serie);
-        } else {
-            // Caso já exista, pode exibir uma mensagem ou tomar outra ação
-            System.out.println("\nSérie com o título '" + dados.titulo() + "' já existe no banco de dados.\n");
+        }
+    }
+
+    public void verificaUnicidadeEpisodioNoBD(String tituloSerie, DadosEpisodios dadosEpisodio ) {
+        Optional<Episodio> episodioExistente = episodioRepository.findByTituloAndSerie_Titulo(dadosEpisodio.titulo(), tituloSerie);
+        Optional<Serie> serieEncontrada = serieRepository.findByTitulo(tituloSerie);
+
+        if (episodioExistente.isEmpty()) {
+            // Se não existir, salva a nova série
+            Episodio ep = new Episodio(dadosEpisodio);
+            ep.setSerie(serieEncontrada.get());
+            episodioRepository.save(ep);
         }
     }
 
@@ -165,7 +188,24 @@ public class Main {
         for (int i = 1; i <= dados.totalTemporadas(); i++) {
             json = consumoAPI.obterDados(ENDERECO + nome.replace(" ", "+") + "&season=" + i + API_KEY);
             DadosTemporada dadosTemporada = conversor.obterDados(json, DadosTemporada.class);
+
+            // Preenche a temporada em cada episódio, afinal, pesquisar por season,
+            // no array de episodes, não há o season dentro deles
+            int temporadaAtual = i;
+            List<DadosEpisodios> episodiosCorrigidos = dadosTemporada.episodios().stream()
+                    .map(episodio -> new DadosEpisodios(
+                            episodio.titulo(),
+                            episodio.numeroEpisodio(),
+                            String.valueOf(temporadaAtual), // Atribui o número da temporada
+                            episodio.avaliacao(),
+                            episodio.dataLancamento()
+                    ))
+                    .toList();
+
+            // Cria um novo objeto DadosTemporada com os episódios corrigidos
+            dadosTemporada = new DadosTemporada(temporadaAtual, episodiosCorrigidos);
             temporadas.add(dadosTemporada);
+            dadosTemporada.imprimirTemporada();
         }
         return temporadas;
     }
@@ -194,7 +234,7 @@ public class Main {
         System.out.println("\nApresentando os 10 episódios mais bem avaliados:");
         todosEpisodiosDeTodasTemporadas.stream()
                 //Retirando os N/A
-                .filter(e -> !e.avaliacao().equalsIgnoreCase("N/A"))
+                .filter(e -> !String.valueOf(e.avaliacao()).equalsIgnoreCase("N/A"))
                 //Peek ajuda a dar uma olhadinha para ver se é o que estávamos esperando
                 //.peek(e-> System.out.println("\nPrimeiro filtro (N/A): "+e))
                 .sorted(Comparator.comparing(DadosEpisodios::avaliacao).reversed())

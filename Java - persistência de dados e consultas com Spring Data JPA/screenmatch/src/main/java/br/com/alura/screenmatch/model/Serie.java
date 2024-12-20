@@ -38,8 +38,8 @@ public class Serie {
     @Column(name = "sinopse")
     private String sinopse;
 
-    //Por enquanto deixa quieto e não salva no banco
-    @Transient
+    //@Transient: Por enquanto deixa quieto e não salva no banco
+    @OneToMany(mappedBy="serie")
     private List<Episodio> episodios = new ArrayList<>();
 
     //Construtor padrão (exigido pela JPA)

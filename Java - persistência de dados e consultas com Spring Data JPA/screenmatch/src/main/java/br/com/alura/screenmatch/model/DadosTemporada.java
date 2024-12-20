@@ -11,6 +11,10 @@ public record DadosTemporada(@JsonAlias("Season") Integer temporada,
                              @JsonAlias("Episodes") List<DadosEpisodios> episodios) {
 
     public DadosTemporada {
+
+    }
+
+    public void imprimirTemporada() {
         System.out.println("\n< Temporada: " + temporada + " >");
         for (DadosEpisodios x : episodios) {
             System.out.println(x);

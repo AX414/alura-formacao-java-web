@@ -1,43 +1,50 @@
 package br.com.alura.screenmatch.model;
 
-
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record DadosEpisodios(@JsonAlias("Title") String titulo,
-                             @JsonAlias("Episode") Integer numeroEpisodio,
-                             @JsonAlias("imdbRating") String avaliacao,
-                             @JsonProperty("Released") String dataLancamento) {
+public record DadosEpisodios(
+        @JsonAlias("Title") String titulo,
+        @JsonAlias("Episode") Integer numeroEpisodio,
+        @JsonAlias("Season") String temporada,
+        @JsonAlias("imdbRating") String avaliacao,  // Agora será String para lidar com "N/A"
+        @JsonProperty("Released") LocalDate dataLancamento) {
 
-    @Override
+    public DadosEpisodios {
+
+    }
+
+    public String avaliacao() {
+        if (this.avaliacao.equalsIgnoreCase("N/A")) {
+            return "N/A";
+        }
+        return avaliacao;
+    }
+
     public Integer numeroEpisodio() {
         return numeroEpisodio;
     }
 
-    @Override
+    public String temporada() {
+        return temporada;
+    }
+
     public String titulo() {
         return titulo;
     }
 
-    @Override
-    public String avaliacao() {
-        return avaliacao;
+    public LocalDate dataLancamento() {
+        return dataLancamento;
     }
-
-    @Override
-    public String dataLancamento() { return dataLancamento; }
 
     @Override
     public String toString() {
         return "| Episódio: " + numeroEpisodio +
+                " | Temporada: " + temporada +
                 " | Título: " + titulo +
                 " | Avaliação: " + avaliacao +
                 " | Data de Lançamento: " + dataLancamento +
