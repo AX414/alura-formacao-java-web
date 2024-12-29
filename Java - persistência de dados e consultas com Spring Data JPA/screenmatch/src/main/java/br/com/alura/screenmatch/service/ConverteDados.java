@@ -18,14 +18,14 @@ public class ConverteDados {
 
             // Validar se a resposta contém erro antes do parsing
             if (json.contains("\"Error\"")) {
-                System.out.println("Erro na resposta da API: " + json);
+                System.out.println("\nErro na resposta da API: " + json);
                 return null;
             }
 
             // Convertendo o JSON para o objeto da classe fornecida
             return mapper.readValue(json, classe);
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao converter dados: " + e.getMessage(), e);
+            throw new RuntimeException("\nErro ao converter dados: " + e.getMessage(), e);
         }
     }
 }

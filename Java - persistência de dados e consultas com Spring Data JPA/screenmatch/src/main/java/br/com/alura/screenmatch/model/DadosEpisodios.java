@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record DadosEpisodios(
@@ -12,7 +12,7 @@ public record DadosEpisodios(
         @JsonAlias("Episode") Integer numeroEpisodio,
         @JsonAlias("Season") String temporada,
         @JsonAlias("imdbRating") String avaliacao,  // Agora será String para lidar com "N/A"
-        @JsonProperty("Released") LocalDate dataLancamento) {
+        @JsonProperty("Released") String dataLancamento) {
 
     public DadosEpisodios {
 
@@ -37,7 +37,10 @@ public record DadosEpisodios(
         return titulo;
     }
 
-    public LocalDate dataLancamento() {
+    public String dataLancamento() {
+        if (this.dataLancamento.equalsIgnoreCase("N/A")) {
+            return "N/A";
+        }
         return dataLancamento;
     }
 

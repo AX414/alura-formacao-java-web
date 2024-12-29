@@ -48,7 +48,7 @@ public class Main {
 
                 // Apresenta dados da série
                 DadosSerie dados = conversor.obterDados(json, DadosSerie.class);
-                if (dados.titulo() == null) {
+                if (dados == null) {
                     System.out.println("\nNenhum resultado encontrado.");
                 } else {
                     List<DadosTemporada> temporadas = new ArrayList<DadosTemporada>();
@@ -266,17 +266,11 @@ public class Main {
         lerInt.nextLine();
 
         System.out.println("\nApresentando episódios a partir do ano de " + ano + ": ");
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyy");
         LocalDate dataBusca = LocalDate.of(ano, 1, 1);
 
         boolean nenhumResultado = episodios.stream()
                 .filter(e -> e.getDataLancamento() != null && e.getDataLancamento().isAfter(dataBusca))
-                .peek(e -> System.out.println("| Temporada: " + e.getTemporada() +
-                        " | Episódio: " + e.getNumeroEpisodio() +
-                        " | Título: " + e.getTitulo() +
-                        " | Avaliação: " + e.getAvaliacao() +
-                        " | Data de Lançamento: " + e.getDataLancamento().format(dtf) +
-                        " |"))
+                .peek(System.out::println)
                 .count() == 0;
 
         if (nenhumResultado) {

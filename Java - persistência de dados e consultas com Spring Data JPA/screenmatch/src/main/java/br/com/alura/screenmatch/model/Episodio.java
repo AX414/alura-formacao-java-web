@@ -1,9 +1,11 @@
 package br.com.alura.screenmatch.model;
 
 import jakarta.persistence.*;
+import org.springframework.cglib.core.Local;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
+import java.time.format.DateTimeFormatter;
 
 @Entity
 @Table(name = "episodios")
@@ -40,19 +42,19 @@ public class Episodio {
         this.titulo = e.titulo();
         this.numeroEpisodio = e.numeroEpisodio();
         try {
-            if(!(e.avaliacao().equals("N/A"))){
+            if (!(e.avaliacao().equals("N/A"))) {
                 this.avaliacao = Double.valueOf(e.avaliacao());
             }
-        } catch (NumberFormatException ex) {
+        } catch (Exception ex) {
             this.avaliacao = null;
         }
-
         try {
-            this.dataLancamento = e.dataLancamento();
-        } catch (DateTimeParseException ex) {
+            if (!(e.dataLancamento().equals("N/A"))) {
+                this.dataLancamento = LocalDate.parse(e.dataLancamento());
+            }
+        } catch (Exception ex) {
             this.dataLancamento = null;
         }
-
     }
 
     public Episodio(Serie serie, String titulo, Integer temporada, Integer numeroEpisodio, Double avaliacao, LocalDate dataLancamento) {
@@ -68,11 +70,19 @@ public class Episodio {
         this.titulo = dadosEpisodios.titulo();
         this.temporada = Integer.valueOf(dadosEpisodios.temporada());
         this.numeroEpisodio = dadosEpisodios.numeroEpisodio();
-        this.dataLancamento = dadosEpisodios.dataLancamento();
         try {
-            this.avaliacao = Double.valueOf(dadosEpisodios.avaliacao());
-        } catch (NumberFormatException ex) {
+            if (!(dadosEpisodios.avaliacao().equals("N/A"))) {
+                this.avaliacao = Double.valueOf(dadosEpisodios.avaliacao());
+            }
+        } catch (Exception ex) {
             this.avaliacao = null;
+        }
+        try {
+            if (!(dadosEpisodios.dataLancamento().equals("N/A"))) {
+                this.dataLancamento = LocalDate.parse(dadosEpisodios.dataLancamento());
+            }
+        } catch (Exception ex) {
+            this.dataLancamento = null;
         }
     }
 
@@ -134,11 +144,13 @@ public class Episodio {
 
     @Override
     public String toString() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyy");
         return "| Temporada: " + temporada +
                 " | Episódio: " + numeroEpisodio +
                 " | Título: " + titulo +
                 " | Avaliação: " + avaliacao +
-                " | Data de Lançamento: " + dataLancamento +
+                " | Data de Lançamento: " +
+                (dataLancamento == null ? "N/A" : dataLancamento.format(dtf)) +
                 " |";
     }
 }
