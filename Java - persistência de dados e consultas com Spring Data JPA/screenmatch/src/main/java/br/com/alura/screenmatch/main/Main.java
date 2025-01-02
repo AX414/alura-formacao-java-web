@@ -11,7 +11,6 @@ import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -76,64 +75,65 @@ public class Main {
 
                         switch (opcao) {
                             case 1:
+
                                 temporadas = apresentandoTodosOsEpisodiosETemporadas(temporadas, json, nome, dados);
 
-                                //Para cada temporada
-                                for(int i = 0;i<temporadas.size();i++){
-                                    //Verifique cada episódio
-                                    for(int j = 0; j<temporadas.get(i).episodios().size();j++){
-                                        verificaUnicidadeEpisodioNoBD(dados.titulo(), temporadas.get(i).episodios().get(j));
+                                if (temporadas != null) {
+                                    //Para cada temporada
+                                    for (int i = 0; i < temporadas.size(); i++) {
+                                        //Verifique cada episódio
+                                        for (int j = 0; j < temporadas.get(i).episodios().size(); j++) {
+                                            verificaUnicidadeEpisodioNoBD(dados.titulo(), temporadas.get(i).episodios().get(j));
+                                        }
                                     }
                                 }
 
                                 break;
                             case 2:
-                                // Não roda se a lista de temporadas não estiver populada
-                                if (temporadas.isEmpty())
+                                if (temporadas == null)
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     apresentandoTodosOsTitulos(temporadas);
                                 break;
                             case 3:
-                                // Não roda se a lista de temporadas não estiver populada
-                                if (temporadas.isEmpty())
+                                if (temporadas == null)
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     todosEpisodiosDeTodasTemporadas = utilizandoStreamsELambdas(temporadas);
                                 break;
                             case 4:
                                 // Não roda se não tiver a lista de todos os eps e todas as temporadas populadas
-                                if (temporadas.isEmpty() || todosEpisodiosDeTodasTemporadas.isEmpty())
+                                if (temporadas  == null || todosEpisodiosDeTodasTemporadas == null)
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     apresentandoDezMaisAvaliados(todosEpisodiosDeTodasTemporadas);
                                 break;
                             case 5:
-                                if (temporadas.isEmpty())
+                                if (temporadas == null)
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     episodios = apresentandoEpisodiosETemporadasPorConstrutor(temporadas);
                                 break;
                             case 6:
-                                if (temporadas.isEmpty() || episodios.isEmpty())
+                                if (temporadas == null|| episodios == null)
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     apresentarEpisodiosAPartirDeUmAno(episodios);
                                 break;
                             case 7:
-                                if (temporadas.isEmpty() || episodios.isEmpty())
+                                if (temporadas == null || episodios == null)
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     apresentarTemporadaPorEpisodio(episodios);
                                 break;
                             case 8:
-                                if (temporadas.isEmpty() || episodios.isEmpty())
+                                if (temporadas == null || episodios == null)
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     apresentarAvaliacoesPorTemporada(episodios);
                                 break;
                             case 9:
-                                if (temporadas.isEmpty() || episodios.isEmpty())
+                                if (temporadas == null || episodios == null)
                                     System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
                                 else
                                     apresentarEstatisticas(episodios);
@@ -152,10 +152,6 @@ public class Main {
                         }
                     } while (opcao != 0);
                 }
-            } else {
-                // Retorna à pergunta inicial para pesquisar outra série ou encerrar
-                listarSeriesBuscadas();
-                System.out.println("\nDeseja pesquisar outra série?");
             }
         } while (opcao != 0);
     }
@@ -171,7 +167,7 @@ public class Main {
         }
     }
 
-    public void verificaUnicidadeEpisodioNoBD(String tituloSerie, DadosEpisodios dadosEpisodio ) {
+    public void verificaUnicidadeEpisodioNoBD(String tituloSerie, DadosEpisodios dadosEpisodio) {
         Optional<Episodio> episodioExistente = episodioRepository.findByTituloAndSerie_Titulo(dadosEpisodio.titulo(), tituloSerie);
         Optional<Serie> serieEncontrada = serieRepository.findByTitulo(tituloSerie);
 
@@ -185,29 +181,34 @@ public class Main {
 
     //1
     public List<DadosTemporada> apresentandoTodosOsEpisodiosETemporadas(List<DadosTemporada> temporadas, String json, String nome, DadosSerie dados) {
-        for (int i = 1; i <= dados.totalTemporadas(); i++) {
-            json = consumoAPI.obterDados(ENDERECO + nome.replace(" ", "+") + "&season=" + i + API_KEY);
-            DadosTemporada dadosTemporada = conversor.obterDados(json, DadosTemporada.class);
+        if (dados.totalTemporadas() != null) {
+            for (int i = 1; i <= dados.totalTemporadas(); i++) {
+                json = consumoAPI.obterDados(ENDERECO + nome.replace(" ", "+") + "&season=" + i + API_KEY);
+                DadosTemporada dadosTemporada = conversor.obterDados(json, DadosTemporada.class);
 
-            // Preenche a temporada em cada episódio, afinal, pesquisar por season,
-            // no array de episodes, não há o season dentro deles
-            int temporadaAtual = i;
-            List<DadosEpisodios> episodiosCorrigidos = dadosTemporada.episodios().stream()
-                    .map(episodio -> new DadosEpisodios(
-                            episodio.titulo(),
-                            episodio.numeroEpisodio(),
-                            String.valueOf(temporadaAtual), // Atribui o número da temporada
-                            episodio.avaliacao(),
-                            episodio.dataLancamento()
-                    ))
-                    .toList();
+                // Preenche a temporada em cada episódio, afinal, pesquisar por season,
+                // no array de episodes, não há o season dentro deles
+                int temporadaAtual = i;
+                List<DadosEpisodios> episodiosCorrigidos = dadosTemporada.episodios().stream()
+                        .map(episodio -> new DadosEpisodios(
+                                episodio.titulo(),
+                                episodio.numeroEpisodio(),
+                                String.valueOf(temporadaAtual), // Atribui o número da temporada
+                                episodio.avaliacao(),
+                                episodio.dataLancamento()
+                        ))
+                        .toList();
 
-            // Cria um novo objeto DadosTemporada com os episódios corrigidos
-            dadosTemporada = new DadosTemporada(temporadaAtual, episodiosCorrigidos);
-            temporadas.add(dadosTemporada);
-            dadosTemporada.imprimirTemporada();
+                // Cria um novo objeto DadosTemporada com os episódios corrigidos
+                dadosTemporada = new DadosTemporada(temporadaAtual, episodiosCorrigidos);
+                temporadas.add(dadosTemporada);
+                dadosTemporada.imprimirTemporada();
+            }
+            return temporadas;
+        } else {
+            System.out.println("\nA API não conseguiu retornar todas as temporadas, tente outra série.");
+            return null;
         }
-        return temporadas;
     }
 
     //2
@@ -224,7 +225,7 @@ public class Main {
         List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = temporadas.stream()
                 .flatMap(t -> t.episodios().stream())
                 .collect(Collectors.toList());
-        todosEpisodiosDeTodasTemporadas.forEach(System.out::println);
+        todosEpisodiosDeTodasTemporadas.forEach(x->System.out.println(x.toString()));
 
         return todosEpisodiosDeTodasTemporadas;
     }
@@ -339,5 +340,6 @@ public class Main {
 
         System.out.println(table);
     }
+
 }
 

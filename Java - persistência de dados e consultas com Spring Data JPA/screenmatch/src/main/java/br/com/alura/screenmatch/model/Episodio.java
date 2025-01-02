@@ -1,9 +1,6 @@
 package br.com.alura.screenmatch.model;
 
 import jakarta.persistence.*;
-import org.springframework.cglib.core.Local;
-
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -15,7 +12,7 @@ public class Episodio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "titulo", unique = true)
+    @Column(name = "titulo")
     private String titulo;
 
     @Column(name = "temporada")

@@ -39,7 +39,9 @@ public class Serie {
     private String sinopse;
 
     //@Transient: Por enquanto deixa quieto e não salva no banco
-    @OneToMany(mappedBy="serie")
+    //Fetch: por padrão é lazy, mas utilizarei o Eager, para carregar as entidades de modo "ansioso",
+    //Trás as entidades de modo implícito, sem pedir.
+    @OneToMany(mappedBy="serie", cascade=CascadeType.ALL, fetch=FetchType.EAGER)
     private List<Episodio> episodios = new ArrayList<>();
 
     //Construtor padrão (exigido pela JPA)
@@ -137,6 +139,7 @@ public class Serie {
     }
 
     public void setEpisodios(List<Episodio> episodios) {
+        episodios.forEach(e->e.setSerie(this));
         this.episodios = episodios;
     }
 
