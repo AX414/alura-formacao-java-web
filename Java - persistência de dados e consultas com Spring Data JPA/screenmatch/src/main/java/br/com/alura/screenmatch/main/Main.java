@@ -11,6 +11,7 @@ import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.Table;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,7 +63,7 @@ public class Main {
                         System.out.println("2  -> Apresentar todos os títulos de episódios.");
                         System.out.println("3  -> Apresentar utilizando streams e lambdas.");
                         System.out.println("4  -> Apresentar os dez mais avaliados.");
-                        System.out.println("5  -> Apresentar episódios e temporadas por um construtor personalizado.");
+                        System.out.println("5  -> Apresentar episódios e temporadas.");
                         System.out.println("6  -> Apresentar episódios a partir de um ano.");
                         System.out.println("7  -> Apresentar temporada por um episódio.");
                         System.out.println("8  -> Apresentar média de avaliações por temporada.");
@@ -90,56 +91,30 @@ public class Main {
 
                                 break;
                             case 2:
-                                if (temporadas == null)
-                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                                else
-                                    apresentandoTodosOsTitulos(temporadas);
+                                    apresentandoTodosOsTitulos(dados.titulo());
                                 break;
                             case 3:
-                                if (temporadas == null)
-                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                                else
-                                    todosEpisodiosDeTodasTemporadas = utilizandoStreamsELambdas(temporadas);
+                                    utilizandoStreamsELambdas(dados.titulo());
                                 break;
                             case 4:
-                                // Não roda se não tiver a lista de todos os eps e todas as temporadas populadas
-                                if (temporadas  == null || todosEpisodiosDeTodasTemporadas == null)
-                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                                else
-                                    apresentandoDezMaisAvaliados(todosEpisodiosDeTodasTemporadas);
+                                    apresentandoDezMaisAvaliados(dados.titulo());
                                 break;
                             case 5:
-                                if (temporadas == null)
-                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                                else
-                                    episodios = apresentandoEpisodiosETemporadasPorConstrutor(temporadas);
+                                    apresentandoEpisodiosETemporadas(dados.titulo());
                                 break;
                             case 6:
-                                if (temporadas == null|| episodios == null)
-                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                                else
-                                    apresentarEpisodiosAPartirDeUmAno(episodios);
+                                    apresentarEpisodiosAPartirDeUmAno(dados.titulo());
                                 break;
                             case 7:
-                                if (temporadas == null || episodios == null)
-                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                                else
-                                    apresentarTemporadaPorEpisodio(episodios);
+                                    apresentarTemporadaPorEpisodio();
                                 break;
                             case 8:
-                                if (temporadas == null || episodios == null)
-                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                                else
-                                    apresentarAvaliacoesPorTemporada(episodios);
+                                    apresentarAvaliacoesPorTemporada(dados.titulo());
                                 break;
                             case 9:
-                                if (temporadas == null || episodios == null)
-                                    System.out.println("\nNão é possível acessar essa opção ainda (acesse as opções anteriores primeiro).");
-                                else
-                                    apresentarEstatisticas(episodios);
+                                    apresentarEstatisticas(dados.titulo());
                                 break;
                             case 10:
-                                System.out.println("\nApresentando todas as séries pesquisadas:");
                                 listarSeriesBuscadas();
                                 break;
                             case 0:
@@ -211,56 +186,58 @@ public class Main {
         }
     }
 
-    //2
-    public void apresentandoTodosOsTitulos(List<DadosTemporada> temporadas) {
-        // Apresentar todos os títulos (forma convencional)
-        System.out.println("\n\nApresentando todos os títulos de episódios:");
-        temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println("| " + e.titulo() + " |")));
+    //2 -> BD
+    public void apresentandoTodosOsTitulos(String tituloSerie) {
+        List<String> todosEpisodios = episodioRepository.findEpisodioTitulosBySerieTitulo(tituloSerie);
+        StringColumn titulos = StringColumn.create("Apresentando todos os títulos de episódios",todosEpisodios.stream().toArray(String[]::new));
+        Table table = Table.create().addColumns(titulos);
+        
+        System.out.println(table);
     }
 
-    //3
-    public List<DadosEpisodios> utilizandoStreamsELambdas(List<DadosTemporada> temporadas) {
-        //Utilizando Streams e lambdas para trabalhar com as temporadas
+    //3 -> BD
+    public void utilizandoStreamsELambdas(String tituloSerie) {
         System.out.println("\n\nUtilizando streams e lambdas: ");
-        List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = temporadas.stream()
-                .flatMap(t -> t.episodios().stream())
-                .collect(Collectors.toList());
-        todosEpisodiosDeTodasTemporadas.forEach(x->System.out.println(x.toString()));
-
-        return todosEpisodiosDeTodasTemporadas;
+        List<Episodio> todosEpisodiosDeTodasTemporadas = episodioRepository.findAllBySerieTitulo(tituloSerie).stream()
+                .toList();
+        todosEpisodiosDeTodasTemporadas.forEach(x-> System.out.println(x.toString()));
     }
 
-    //4
-    public void apresentandoDezMaisAvaliados(List<DadosEpisodios> todosEpisodiosDeTodasTemporadas) {
-        System.out.println("\nApresentando os 10 episódios mais bem avaliados:");
-        todosEpisodiosDeTodasTemporadas.stream()
-                //Retirando os N/A
-                .filter(e -> !String.valueOf(e.avaliacao()).equalsIgnoreCase("N/A"))
-                //Peek ajuda a dar uma olhadinha para ver se é o que estávamos esperando
-                //.peek(e-> System.out.println("\nPrimeiro filtro (N/A): "+e))
-                .sorted(Comparator.comparing(DadosEpisodios::avaliacao).reversed())
-                //.peek(e-> System.out.println("\nOrdenação: "+e))
-                .limit(10)
-                //.peek(e-> System.out.println("\nLimite: "+e))
-                .map(e -> e.titulo().toUpperCase())
-                //.peek(e-> System.out.println("\nMapeamento: "+e))
-                .forEach(e -> System.out.println("* " + e));
+    //4 -> BD
+    public void apresentandoDezMaisAvaliados(String tituloSerie) {
+        List<Episodio> top10Episodios = episodioRepository.findTop10BySerieTitulo(tituloSerie);
+        StringColumn titulos = StringColumn.create("Títulos",top10Episodios.stream().map(Episodio::getTitulo).toArray(String[]::new));
+        IntColumn temporadas = IntColumn.create("Temporadas",top10Episodios.stream().map(Episodio::getTemporada).toArray(Integer[]::new));
+        DoubleColumn avaliacoes = DoubleColumn.create("Avaliação", top10Episodios.stream().map(Episodio::getAvaliacao).toArray(Double[]::new));
+        Table table = Table.create().addColumns(titulos,temporadas,avaliacoes);
+        
+        System.out.println(table);
     }
 
-    //5
-    public List<Episodio> apresentandoEpisodiosETemporadasPorConstrutor(List<DadosTemporada> temporadas) {
-        System.out.println("\nApresentando episódios e temporadas por meio de um construtor de episódios da classe Episódio:");
-        List<Episodio> episodios = temporadas.stream()
-                .flatMap(t -> t.episodios()
-                        .stream()
-                        .map(e -> new Episodio(t.temporada(), e))
-                ).collect(Collectors.toList());
-        episodios.forEach(System.out::println);
-        return episodios;
+    //5 -> BD
+    public void apresentandoEpisodiosETemporadas(String tituloSerie) {
+        List<Episodio> listaEpisodios = episodioRepository.findAllBySerieTitulo(tituloSerie);
+        StringColumn titulos = StringColumn.create("Títulos",listaEpisodios.stream().map(Episodio::getTitulo).toArray(String[]::new));
+        IntColumn temporadas = IntColumn.create("Temporadas",listaEpisodios.stream().map(Episodio::getTemporada).toArray(Integer[]::new));
+        DoubleColumn avaliacoes = DoubleColumn.create("Avaliação", listaEpisodios.stream().map(Episodio::getAvaliacao).toArray(Double[]::new));
+
+        // Formatador para exibir as datas no formato desejado
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        StringColumn dataLancamentos = StringColumn.create("Datas de lançamento",
+                listaEpisodios.stream()
+                        .map(e -> e.getDataLancamento() != null ? e.getDataLancamento().format(formatter) : "N/A")
+                        .toArray(String[]::new));
+
+        Table table = Table.create().addColumns(titulos, temporadas, avaliacoes, dataLancamentos)
+                .sortAscendingOn("Temporadas", "Datas de lançamento");
+        
+
+        System.out.println(table);
+
     }
 
-    //6
-    public void apresentarEpisodiosAPartirDeUmAno(List<Episodio> episodios) {
+    //6 -> BD
+    public void apresentarEpisodiosAPartirDeUmAno(String tituloSerie) {
 
         System.out.println("\nA partir de que ano você quer ver estes episódios?");
         var ano = lerInt.nextInt();
@@ -269,7 +246,7 @@ public class Main {
         System.out.println("\nApresentando episódios a partir do ano de " + ano + ": ");
         LocalDate dataBusca = LocalDate.of(ano, 1, 1);
 
-        boolean nenhumResultado = episodios.stream()
+        boolean nenhumResultado = episodioRepository.findAllBySerieTitulo(tituloSerie).stream()
                 .filter(e -> e.getDataLancamento() != null && e.getDataLancamento().isAfter(dataBusca))
                 .peek(System.out::println)
                 .count() == 0;
@@ -279,15 +256,15 @@ public class Main {
         }
     }
 
-    //7
-    public void apresentarTemporadaPorEpisodio(List<Episodio> episodios) {
-        System.out.println("\nDigite o título de um episódio: ");
-        var tituloEpisodio = lerString.nextLine();
-        //Optional é utilizado quando os valores podem ou não serem retornados
-        Optional<Episodio> episodioBuscado = episodios.stream()
-                .filter(e -> e.getTitulo().contains(tituloEpisodio))
-                .findFirst();
+    //7 -> BD
+    public void apresentarTemporadaPorEpisodio() {
+        String tituloEpisodio = "";
 
+        System.out.println("\nDigite o título de um episódio: ");
+        tituloEpisodio = lerString.nextLine();
+
+        //Optional é utilizado quando os valores podem ou não serem retornados
+        Optional<Episodio> episodioBuscado = episodioRepository.findByTituloContainingIgnoreCase(tituloEpisodio);
         //Procura se existe
         episodioBuscado.ifPresent(episodio -> System.out.println("\nEpisódio encontrado, ele pertence à temporada: " + episodio.getTemporada()));
         if (episodioBuscado.isEmpty()) {
@@ -295,35 +272,34 @@ public class Main {
         }
     }
 
-    //8
-    public void apresentarAvaliacoesPorTemporada(List<Episodio> episodios) {
+    //8 -> BD
+    public void apresentarAvaliacoesPorTemporada(String tituloSerie) {
         //Apresenta a média de avaliação por temporada
-        Map<Integer, Double> avaliacaoPorTemporada = episodios.stream()
+        Map<Integer, Double> avaliacaoPorTemporada = episodioRepository.findAllBySerieTitulo(tituloSerie).stream()
                 .filter(e -> e.getAvaliacao() != null && e.getAvaliacao() > 0.0)
                 .collect(Collectors.groupingBy(Episodio::getTemporada,
                         Collectors.averagingDouble(Episodio::getAvaliacao)));
         System.out.println("* " + avaliacaoPorTemporada);
     }
 
-    //9
-    public void apresentarEstatisticas(List<Episodio> episodios) {
+    //9 -> BD
+    public void apresentarEstatisticas(String tituloSerie) {
         //Apresenta estatísticas
-        System.out.println("\nApresenta Estatísticas do Double Summary Statistics: ");
-        DoubleSummaryStatistics est = episodios.stream()
+        DoubleSummaryStatistics est = episodioRepository.findAllBySerieTitulo(tituloSerie).stream()
                 .filter(e -> e.getAvaliacao() != null && e.getAvaliacao() > 0.0)
                 .collect(Collectors.summarizingDouble(Episodio::getAvaliacao));
-        System.out.println("* " + est);
+        System.out.println("Estatísticas do Double Summary Statistics:" + est);
 
         //Não é necessário somar todas as avaliações
         //imprimimos apenas o necessário
-        System.out.println("\n\nApresentando as estatísticas que eu quero:"
+        System.out.println("\n\nApresentando as estatísticas que eu me importo:"
                 + "\n* Média: " + est.getAverage()
                 + "\n* Menor Avaliação: " + est.getMin()
                 + "\n* Melhor Avaliação: " + est.getMax()
                 + "\n* Quantidade de episódios avaliados: " + est.getCount());
     }
 
-    //10
+    //10 -> BD
     public void listarSeriesBuscadas() {
         List<Serie> series = serieRepository.findAll();
 
@@ -337,7 +313,7 @@ public class Main {
         Table table = Table.create("Séries do BD:")
                 .addColumns(nomes, categorias, atores, totalTemporadas, mediaAvaliacao)
                 .sortAscendingOn("Nome");
-
+        
         System.out.println(table);
     }
 

@@ -5,7 +5,8 @@ public enum Categoria {
     ROMANCE("Romance"),
     COMEDIA("Comedy"),
     DRAMA("Drama"),
-    CRIME("Crime");
+    CRIME("Crime"),
+    ANIMACAO("Animation");
 
     private String categoriaOmdb;
 
@@ -20,5 +21,11 @@ public enum Categoria {
             }
         }
         throw new IllegalArgumentException("\nNenhuma categoria encontrada para a string fornecida: " + text);
+    }
+
+    // Método para obter o nome correto a ser salvo no banco de dados
+    @Override
+    public String toString() {
+        return this.name();  // Retorna o nome do enum em maiúsculas
     }
 }

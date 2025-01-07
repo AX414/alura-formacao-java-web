@@ -17,4 +17,21 @@ FROM episodios e
 JOIN serie s ON e.serie_id = s.id
 GROUP BY s.id, s.titulo;
 
+-- Apresenta os 10 mais bem avaliados
+SELECT e.titulo, e.avaliacao FROM episodios e
+JOIN serie s ON s.id = e.serie_id
+WHERE e.avaliacao IS NOT NULL
+AND s.titulo = 'The Witcher'
+ORDER BY e.avaliacao DESC
+LIMIT 10
 
+-- Apresentando o nome de todos os episodios de The Witcher
+SELECT e.titulo FROM episodios e 
+JOIN serie s ON s.id = e.serie_id
+WHERE s.titulo = 'The Witcher'
+
+-- Inserindo novo ENUM na categoria
+ALTER TABLE serie DROP CONSTRAINT serie_categoria_check;
+
+ALTER TABLE serie ADD CONSTRAINT serie_categoria_check 
+CHECK (categoria IN ('ACAO', 'ROMANCE', 'COMEDIA', 'DRAMA', 'CRIME', 'ANIMACAO'));
