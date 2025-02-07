@@ -10,8 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EpisodioRepository extends JpaRepository<Episodio, Long>{
-    Optional<Episodio> findByTituloContainingIgnoreCase(String titulo);
-    Optional<Episodio> findByTituloAndSerie_Titulo(String tituloEpisodio, String tituloSerie);
+    @Query(value = "SELECT e.* FROM episodios e " +
+            "JOIN serie s ON e.serie_id = s.id " +
+            "WHERE s.titulo = :tituloSerie " +
+            "AND e.titulo LIKE %:tituloEpisodio% LIMIT 1", nativeQuery = true)
+    Optional<Episodio> findByTituloContainingIgnoreCase(@Param("tituloSerie") String tituloSerie,
+                                                        @Param("tituloEpisodio") String tituloEpisodio);
 
     @Query(value = "SELECT e.* FROM episodios e " +
             "JOIN serie s ON s.id = e.serie_id " +

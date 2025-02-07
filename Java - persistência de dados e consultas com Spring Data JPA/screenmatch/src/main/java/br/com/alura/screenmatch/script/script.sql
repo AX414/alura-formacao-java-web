@@ -30,6 +30,13 @@ SELECT e.titulo FROM episodios e
 JOIN serie s ON s.id = e.serie_id
 WHERE s.titulo = 'The Witcher'
 
+-- Pesquisando um episódio de The Witcher que 
+-- tenha a palavra Chaos no título
+SELECT e.* FROM episodios e
+JOIN serie s ON e.serie_id = s.id
+WHERE s.titulo = 'The Witcher' 
+AND e.titulo LIKE '%Chaos%' LIMIT 1;
+
 -- Inserindo novo ENUM na categoria
 ALTER TABLE serie DROP CONSTRAINT serie_categoria_check;
 
