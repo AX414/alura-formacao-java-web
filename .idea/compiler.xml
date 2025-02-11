@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="screenmatch" />
+        <module name="screenmatch (2)" />
         <module name="screenmatch (1)" />
       </profile>
     </annotationProcessing>
@@ -15,6 +16,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="screenmatch" options="-parameters" />
       <module name="screenmatch (1)" options="-parameters" />
+      <module name="screenmatch (2)" options="-parameters" />
     </option>
   </component>
 </project>

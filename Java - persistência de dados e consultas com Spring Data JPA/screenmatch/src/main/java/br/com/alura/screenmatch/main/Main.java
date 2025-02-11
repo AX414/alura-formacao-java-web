@@ -124,8 +124,9 @@ public class Main {
                 }
             }else {
                 System.out.println("\n<Menu>");
-                System.out.println("1 -> Apresentar todas as séries pesquisadas.");
-                System.out.println("2 -> Apresentar todas as séries que um determinado ator trabalhou.");
+                System.out.println("1  -> Apresentar todas as séries pesquisadas.");
+                System.out.println("2  -> Apresentar todas as séries que um determinado ator trabalhou.");
+                System.out.println("3  -> Apresentar as top 5 melhores séries.");
                 System.out.println("0  -> Encerrar consulta.");
                 System.out.println("\n\nSelecione uma das opções do menu para prosseguir: ");
                 opcao = lerInt.nextInt();
@@ -136,6 +137,9 @@ public class Main {
                         break;
                     case 2:
                         listarSeriesPorAtor();
+                        break;
+                    case 3:
+                        listarTop5Series();
                         break;
                     case 0:
                         System.out.println("\nEncerrando a consulta.");
@@ -166,7 +170,7 @@ public class Main {
 
     public void verificaUnicidadeEpisodioNoBD(String tituloSerie, DadosEpisodios dadosEpisodio) {
         try {
-            Optional<Episodio> episodioExistente = episodioRepository.findByTituloContainingIgnoreCase(dadosEpisodio.titulo(), tituloSerie);
+            Optional<Episodio> episodioExistente = episodioRepository.findFirstBySerieTituloAndTituloContainingIgnoreCase(dadosEpisodio.titulo(), tituloSerie);
             Optional<Serie> serieEncontrada = serieRepository.findByTitulo(tituloSerie);
 
             if (episodioExistente.isEmpty()) {
@@ -222,7 +226,7 @@ public class Main {
     //2 -> BD
     private void apresentandoTodosOsTitulos(String tituloSerie) {
         try {
-            List<String> todosEpisodios = episodioRepository.findEpisodioTitulosBySerieTitulo(tituloSerie);
+            List<String> todosEpisodios = episodioRepository.findTituloBySerieTitulo(tituloSerie);
             StringColumn titulos = StringColumn.create("Apresentando todos os títulos de episódios", todosEpisodios.stream().toArray(String[]::new));
             Table table = Table.create().addColumns(titulos);
             System.out.println(table);
@@ -236,7 +240,7 @@ public class Main {
     private void utilizandoStreamsELambdas(String tituloSerie) {
         try {
             System.out.println("\n\nUtilizando streams e lambdas: ");
-            List<Episodio> todosEpisodiosDeTodasTemporadas = episodioRepository.findAllBySerieTitulo(tituloSerie).stream()
+            List<Episodio> todosEpisodiosDeTodasTemporadas = episodioRepository.findBySerieTitulo(tituloSerie).stream()
                     .toList();
             todosEpisodiosDeTodasTemporadas.forEach(x -> System.out.println(x.toString()));
         } catch (Exception e) {
@@ -248,7 +252,7 @@ public class Main {
     //4 -> BD
     private void apresentandoDezMaisAvaliados(String tituloSerie) {
         try {
-            List<Episodio> top10Episodios = episodioRepository.findTop10BySerieTitulo(tituloSerie);
+            List<Episodio> top10Episodios = episodioRepository.findTop10BySerieTituloAndAvaliacaoIsNotNullOrderByAvaliacaoDesc(tituloSerie);
             StringColumn titulos = StringColumn.create("Títulos", top10Episodios.stream().map(Episodio::getTitulo).toArray(String[]::new));
             IntColumn temporadas = IntColumn.create("Temporadas", top10Episodios.stream().map(Episodio::getTemporada).toArray(Integer[]::new));
             DoubleColumn avaliacoes = DoubleColumn.create("Avaliação", top10Episodios.stream().map(Episodio::getAvaliacao).toArray(Double[]::new));
@@ -263,7 +267,7 @@ public class Main {
     //5 -> BD
     private void apresentandoEpisodiosETemporadas(String tituloSerie) {
         try {
-            List<Episodio> listaEpisodios = episodioRepository.findAllBySerieTitulo(tituloSerie);
+            List<Episodio> listaEpisodios = episodioRepository.findBySerieTitulo(tituloSerie);
             StringColumn titulos = StringColumn.create("Títulos", listaEpisodios.stream().map(Episodio::getTitulo).toArray(String[]::new));
             IntColumn temporadas = IntColumn.create("Temporadas", listaEpisodios.stream().map(Episodio::getTemporada).toArray(Integer[]::new));
             DoubleColumn avaliacoes = DoubleColumn.create("Avaliação", listaEpisodios.stream().map(Episodio::getAvaliacao).toArray(Double[]::new));
@@ -296,7 +300,7 @@ public class Main {
             System.out.println("\nApresentando episódios a partir do ano de " + ano + ": ");
             LocalDate dataBusca = LocalDate.of(ano, 1, 1);
 
-            boolean nenhumResultado = episodioRepository.findAllBySerieTitulo(tituloSerie).stream()
+            boolean nenhumResultado = episodioRepository.findBySerieTitulo(tituloSerie).stream()
                     .filter(e -> e.getDataLancamento() != null && e.getDataLancamento().isAfter(dataBusca))
                     .peek(System.out::println)
                     .count() == 0;
@@ -317,7 +321,7 @@ public class Main {
             var tituloEpisodio = lerString.nextLine();
 
             //Optional é utilizado quando os valores podem ou não serem retornados
-            Optional<Episodio> episodioBuscado = episodioRepository.findByTituloContainingIgnoreCase(tituloSerie, tituloEpisodio);
+            Optional<Episodio> episodioBuscado = episodioRepository.findFirstBySerieTituloAndTituloContainingIgnoreCase(tituloSerie, tituloEpisodio);
             //Procura se existe
             episodioBuscado.ifPresent(episodio -> System.out.println("\nEpisódio encontrado:\n\n| " + episodio.getTitulo() + " | Temporada: " + episodio.getTemporada() + " |"));
             if (episodioBuscado.isEmpty()) {
@@ -333,7 +337,7 @@ public class Main {
     private void apresentarAvaliacoesPorTemporada(String tituloSerie) {
         try {
             //Apresenta a média de avaliação por temporada
-            Map<Integer, Double> avaliacaoPorTemporada = episodioRepository.findAllBySerieTitulo(tituloSerie).stream()
+            Map<Integer, Double> avaliacaoPorTemporada = episodioRepository.findBySerieTitulo(tituloSerie).stream()
                     .filter(e -> e.getAvaliacao() != null && e.getAvaliacao() > 0.0)
                     .collect(Collectors.groupingBy(Episodio::getTemporada,
                             Collectors.averagingDouble(Episodio::getAvaliacao)));
@@ -348,7 +352,7 @@ public class Main {
     private void apresentarEstatisticas(String tituloSerie) {
         try {
             //Apresenta estatísticas
-            DoubleSummaryStatistics est = episodioRepository.findAllBySerieTitulo(tituloSerie).stream()
+            DoubleSummaryStatistics est = episodioRepository.findBySerieTitulo(tituloSerie).stream()
                     .filter(e -> e.getAvaliacao() != null && e.getAvaliacao() > 0.0)
                     .collect(Collectors.summarizingDouble(Episodio::getAvaliacao));
             System.out.println("\nEstatísticas do Double Summary Statistics:" + est);
@@ -390,6 +394,16 @@ public class Main {
             List<Serie> series = serieRepository.findByAtoresContainingIgnoreCaseAndAvaliacaoGreaterThanEqual(nomeAtor, avaliacaoSerie);
             imprimirSeries(series);
         } catch (Exception e) {
+            System.out.println("\nOcorreu um erro durante a consulta: \n");
+            e.printStackTrace();
+        }
+    }
+
+    private void listarTop5Series(){
+        try{
+            List<Serie> series = serieRepository.findTop5OrderByAvaliacaoDesc();
+            imprimirSeries(series);
+        }catch (Exception e) {
             System.out.println("\nOcorreu um erro durante a consulta: \n");
             e.printStackTrace();
         }
