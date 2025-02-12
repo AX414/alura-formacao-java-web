@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalDouble;
+import java.util.Optional;
 
 @Entity
 @Table(name="serie")
@@ -38,24 +38,34 @@ public class Serie {
     @Column(name = "sinopse")
     private String sinopse;
 
-    //@Transient: Por enquanto deixa quieto e não salva no banco
-    //Fetch: por padrão é lazy, mas utilizarei o Eager, para carregar as entidades de modo "ansioso",
-    //Trás as entidades de modo implícito, sem pedir.
     @OneToMany(mappedBy="serie", cascade=CascadeType.ALL, fetch=FetchType.EAGER)
     private List<Episodio> episodios = new ArrayList<>();
 
-    //Construtor padrão (exigido pela JPA)
+    // Construtor padrão (exigido pela JPA)
     public Serie(){}
 
     public Serie(DadosSerie dadosSerie) {
         this.titulo = dadosSerie.titulo();
         this.totalTemporadas = dadosSerie.totalTemporadas();
-        this.avaliacao = OptionalDouble.of(Double.valueOf(dadosSerie.avaliacao())).orElse(0);
-        this.categoria = Categoria.fromString(dadosSerie.categoria().split(",")[0].trim());
+
+        try {
+            this.avaliacao = Double.valueOf(dadosSerie.avaliacao());
+        } catch (NumberFormatException e) {
+            this.avaliacao = 0.0;
+        }
+
+        // Obtém a categoria original
+        String categoriaOriginal = dadosSerie.categoria().split(",")[0].trim();
+
+        // Atribui o enum Categoria, não a tradução
+        this.categoria = Categoria.getByTraducao(categoriaOriginal)
+                .orElse(Categoria.DESCONHECIDO);  // Atribui a categoria caso seja desconhecida
+
         this.atores = dadosSerie.atores();
         this.poster = dadosSerie.poster();
         traduzirSinopse(dadosSerie.sinopse());
     }
+
 
     public void traduzirSinopse(String sinopse){
         try {
@@ -63,83 +73,39 @@ public class Serie {
         } catch (Exception e) {
             try{
                 this.sinopse = ConsultaMyMemory.obterTraducao(sinopse);
-            }catch(Exception ex){
-                //Se não funcionar a tradução, apresenta em inglês mesmo.
-                this.sinopse = sinopse;
+            } catch(Exception ex){
+                this.sinopse = sinopse; // Se falhar, mantém em inglês
             }
         }
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getTitulo() { return titulo; }
+    public void setTitulo(String titulo) { this.titulo = titulo; }
 
-    public String getTitulo() {
-        return titulo;
-    }
+    public Integer getTotalTemporadas() { return totalTemporadas; }
+    public void setTotalTemporadas(Integer totalTemporadas) { this.totalTemporadas = totalTemporadas; }
 
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
+    public Double getAvaliacao() { return avaliacao; }
+    public void setAvaliacao(Double avaliacao) { this.avaliacao = avaliacao; }
 
-    public Integer getTotalTemporadas() {
-        return totalTemporadas;
-    }
+    public Categoria getCategoria() { return categoria; }
+    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
 
-    public void setTotalTemporadas(Integer totalTemporadas) {
-        this.totalTemporadas = totalTemporadas;
-    }
+    public String getAtores() { return atores; }
+    public void setAtores(String atores) { this.atores = atores; }
 
-    public Double getAvaliacao() {
-        return avaliacao;
-    }
+    public String getPoster() { return poster; }
+    public void setPoster(String poster) { this.poster = poster; }
 
-    public void setAvaliacao(Double avaliacao) {
-        this.avaliacao = avaliacao;
-    }
+    public String getSinopse() { return sinopse; }
+    public void setSinopse(String sinopse) { this.sinopse = sinopse; }
 
-    public Categoria getCategoria() {
-        return categoria;
-    }
-
-    public void setCategoria(Categoria categoria) {
-        this.categoria = categoria;
-    }
-
-    public String getAtores() {
-        return atores;
-    }
-
-    public void setAtores(String atores) {
-        this.atores = atores;
-    }
-
-    public String getPoster() {
-        return poster;
-    }
-
-    public void setPoster(String poster) {
-        this.poster = poster;
-    }
-
-    public String getSinopse() {
-        return sinopse;
-    }
-
-    public void setSinopse(String sinopse) {
-        this.sinopse = sinopse;
-    }
-
-    public List<Episodio> getEpisodios() {
-        return episodios;
-    }
-
+    public List<Episodio> getEpisodios() { return episodios; }
     public void setEpisodios(List<Episodio> episodios) {
-        episodios.forEach(e->e.setSerie(this));
+        episodios.forEach(e -> e.setSerie(this));
         this.episodios = episodios;
     }
 

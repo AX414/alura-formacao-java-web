@@ -3,6 +3,7 @@ package br.com.alura.screenmatch.repository;
 import br.com.alura.screenmatch.model.Episodio;
 import br.com.alura.screenmatch.model.Serie;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,9 +12,10 @@ public interface EpisodioRepository extends JpaRepository<Episodio, Long> {
 
     Optional<Episodio> findFirstBySerieTituloAndTituloContainingIgnoreCase(String tituloSerie, String tituloEpisodio);
 
-    List<Episodio> findTop10BySerieTituloAndAvaliacaoIsNotNullOrderByAvaliacaoDesc(String tituloSerie);
+    List<Episodio> findDistinctTop10BySerieTituloAndAvaliacaoIsNotNullOrderByAvaliacaoDesc(String tituloSerie);
 
-    List<String> findTituloBySerieTitulo(String tituloSerie);
+    @Query("SELECT e.titulo FROM Episodio e WHERE e.serie.titulo = :tituloSerie")
+    List<String> findDistinctTituloBySerieTitulo(String tituloSerie);
 
-    List<Episodio> findBySerieTitulo(String tituloSerie);
+    List<Episodio> findDistinctBySerieTitulo(String tituloSerie);
 }
