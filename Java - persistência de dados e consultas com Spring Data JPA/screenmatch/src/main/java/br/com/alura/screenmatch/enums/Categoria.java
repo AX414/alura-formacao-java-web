@@ -22,17 +22,22 @@ public enum Categoria {
     // Método para converter de string para categoria traduzida
     public static Categoria fromString(String text) {
         if (text == null || text.isBlank()) {
-            return Categoria.DESCONHECIDO;  // Retorna a categoria desconhecida diretamente
+            return Categoria.DESCONHECIDO;
         }
 
+        // Pega apenas a primeira categoria antes da vírgula
+        String primeiraCategoria = text.split(",")[0].trim();
+
         for (Categoria categoria : Categoria.values()) {
-            if (categoria.categoriaOmdb.equalsIgnoreCase(text) || categoria.categoriaTraduzida.equalsIgnoreCase(text)) {
-                return categoria;  // Retorna a categoria diretamente
+            if (categoria.categoriaOmdb.equalsIgnoreCase(primeiraCategoria) ||
+                    categoria.categoriaTraduzida.equalsIgnoreCase(primeiraCategoria)) {
+                return categoria;
             }
         }
 
-        return Categoria.DESCONHECIDO;  // Retorna a categoria desconhecida se não encontrar
+        return Categoria.DESCONHECIDO;
     }
+
 
     // Novo método para buscar a categoria pelo nome traduzido
     public static Optional<Categoria> getByTraducao(String traducao) {

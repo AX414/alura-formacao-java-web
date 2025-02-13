@@ -63,11 +63,9 @@ public class Main {
         if (dados == null) {
             System.out.println("\nNenhum resultado encontrado.");
         } else {
-            List<DadosTemporada> temporadas = new ArrayList<DadosTemporada>();
-            List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = new ArrayList<DadosEpisodios>();
-            List<Episodio> episodios = new ArrayList<Episodio>();
+            List<DadosTemporada> temporadas = new ArrayList<>();
 
-            verificaUnicidadeSerieNoBD(dados, json);
+            verificaUnicidadeSerieNoBD(dados);
 
             do {
                 System.out.println("\n<Menu>");
@@ -169,38 +167,61 @@ public class Main {
         } while (opcao != 0);
     }
 
-    private void verificaUnicidadeSerieNoBD(DadosSerie dados, String json) {
+    private void verificaUnicidadeSerieNoBD(DadosSerie dados) {
         try {
-            // Verifica se já existe uma série com o mesmo título
+            // Verifica se já existe uma série com o mesmo título no banco
             Optional<Serie> serieExistente = serieRepository.findByTitulo(dados.titulo());
 
-            if (serieExistente.isEmpty()) {
-                // Se não existir, salva a nova série
-                Serie serie = new Serie(dados);
-                serieRepository.save(serie);
-            } else {
-                // Se já existir, atualiza os dados da série (acho necessário só esses 2)
-                Serie serie = serieExistente.get();
-                DadosSerie dadosAtualizados = conversor.obterDados(json, DadosSerie.class);
-                serie.setCategoria(Categoria.fromString(dadosAtualizados.categoria()));
-                serie.setAvaliacao(Double.valueOf(dadosAtualizados.avaliacao()));
+            // 🔍 Obtém os dados mais recentes da API
+            String json = consumoAPI.obterDados(ENDERECO + dados.titulo().replace(" ", "+") + API_KEY);
+            DadosSerie dadosAtualizados = conversor.obterDados(json, DadosSerie.class);
 
-                // Atualiza a avaliação, com verificação de valor válido
-                try {
-                    serie.setAvaliacao(Double.valueOf(dados.avaliacao()));
-                } catch (NumberFormatException e) {
-                    serie.setAvaliacao(0.0);
+            if (serieExistente.isEmpty()) {
+                // Se a série não existe no banco, insere com os novos dados
+                Serie novaSerie = new Serie(dadosAtualizados);
+                serieRepository.save(novaSerie);
+                System.out.println("\nSÉRIE INSERIDA NO BANCO: " + novaSerie);
+            } else {
+                // Se a série já existe, atualiza os dados se necessário
+                Serie serieAtualizada = serieExistente.get();
+
+                boolean alterado = false;
+
+                // Verifica e atualiza a categoria (pegando apenas a primeira, se houver múltiplas)
+                String primeiraCategoria = dadosAtualizados.categoria().split(",")[0].trim();
+                Categoria novaCategoria = Categoria.fromString(primeiraCategoria);
+                if (!serieAtualizada.getCategoria().equals(novaCategoria)) {
+                    serieAtualizada.setCategoria(novaCategoria);
+                    alterado = true;
                 }
 
-                // Atualiza a série no banco de dados
-                serieRepository.save(serie);
+                // Atualiza a avaliação, verificando se é válida
+                try {
+                    double novaAvaliacao = Double.parseDouble(dadosAtualizados.avaliacao());
+                    if (serieAtualizada.getAvaliacao() != novaAvaliacao) {
+                        serieAtualizada.setAvaliacao(novaAvaliacao);
+                        alterado = true;
+                    }
+                } catch (NumberFormatException e) {
+                    if (serieAtualizada.getAvaliacao() != 0.0) {
+                        serieAtualizada.setAvaliacao(0.0);
+                        alterado = true;
+                    }
+                }
+
+                // Se houve alteração, salva no banco
+                if (alterado) {
+                    System.out.println("\nDADOS ANTES: " + serieExistente.get());
+                    System.out.println("\nDADOS DEPOIS: " + serieAtualizada);
+                    serieRepository.save(serieAtualizada);
+                    System.out.println("\nSÉRIE ATUALIZADA NO BANCO.");
+                }
             }
         } catch (Exception e) {
             System.out.println("\nOcorreu um erro ao verificar a unicidade da série no banco:\n");
             e.printStackTrace();
         }
     }
-
 
     public void verificaUnicidadeEpisodioNoBD(String tituloSerie, DadosEpisodios dadosEpisodio) {
         try {
@@ -210,23 +231,44 @@ public class Main {
 
             if (episodioExistente.isEmpty()) {
                 // Se o episódio não existir, cria e salva um novo episódio
-                Episodio ep = new Episodio(dadosEpisodio);
-                ep.setSerie(serieEncontrada.get());
-                episodioRepository.save(ep);
+                Episodio novoEpisodio = new Episodio(dadosEpisodio);
+                novoEpisodio.setSerie(serieEncontrada.get());
+                episodioRepository.save(novoEpisodio);
+                System.out.println("\nNOVO EPISÓDIO INSERIDO NO BANCO: " + novoEpisodio);
             } else {
-                // Se o episódio já existir, atualiza os dados
-                Episodio episodio = episodioExistente.get();
-                episodio.setAvaliacao(Double.valueOf(dadosEpisodio.avaliacao()));
+                // Se o episódio já existir, verifica se há mudanças antes de atualizar
+                Episodio episodioAtualizado = episodioExistente.get();
 
-                // Atualiza o episódio no banco de dados
-                episodioRepository.save(episodio);
+                boolean alterado = false;
+
+                // Atualiza a avaliação, verificando se é válida
+                try {
+                    double novaAvaliacao = Double.parseDouble(dadosEpisodio.avaliacao());
+                    if (episodioAtualizado.getAvaliacao() != novaAvaliacao) {
+                        episodioAtualizado.setAvaliacao(novaAvaliacao);
+                        alterado = true;
+                    }
+                } catch (NumberFormatException e) {
+                    if (episodioAtualizado.getAvaliacao() != 0.0) {
+                        episodioAtualizado.setAvaliacao(0.0);
+                        alterado = true;
+                    }
+                }
+
+                // Se houve alteração, salva no banco e imprime antes/depois
+                if (alterado) {
+                    System.out.println("\nDADOS ANTES: " + episodioExistente.get());
+                    System.out.println("\nDADOS DEPOIS: " + episodioAtualizado);
+                    episodioRepository.save(episodioAtualizado);
+                    System.out.println("\nEPISÓDIO ATUALIZADO NO BANCO.");
+                }
             }
         } catch (Exception e) {
             System.out.println("\nOcorreu um erro ao verificar a unicidade do episódio no banco:\n");
             e.printStackTrace();
         }
     }
-
+    
     //1
     private List<DadosTemporada> apresentandoTodosOsEpisodiosETemporadas(List<DadosTemporada> temporadas, String json, String nome, DadosSerie dados) {
         try {
@@ -485,7 +527,7 @@ public class Main {
         System.out.println(table);
     }
 
-    public void imprimirEpisodios(List<Episodio> episodios){
+    public void imprimirEpisodios(List<Episodio> episodios) {
         StringColumn titulos = StringColumn.create("Títulos", episodios.stream().map(Episodio::getTitulo).toArray(String[]::new));
         IntColumn temporadas = IntColumn.create("Temporadas", episodios.stream().map(Episodio::getTemporada).toArray(Integer[]::new));
         DoubleColumn avaliacoes = DoubleColumn.create("Avaliação", episodios.stream().map(Episodio::getAvaliacao).toArray(Double[]::new));
@@ -493,12 +535,12 @@ public class Main {
         System.out.println(table);
     }
 
-    public void imprimirEstatisticas(DoubleSummaryStatistics est){
+    public void imprimirEstatisticas(DoubleSummaryStatistics est) {
         DoubleColumn media = DoubleColumn.create("Média", est.getAverage());
         DoubleColumn menorAvaliacao = DoubleColumn.create("Menor Avaliação", est.getMin());
         DoubleColumn maiorAvaliacao = DoubleColumn.create("Maior Avaliação", est.getMax());
-        LongColumn qtdEps = LongColumn.create("Quantia de episódios avaliados",est.getCount());
-        Table table = Table.create("Estatísticas dos episódios:").addColumns(media,menorAvaliacao,maiorAvaliacao,qtdEps);
+        LongColumn qtdEps = LongColumn.create("Quantia de episódios avaliados", est.getCount());
+        Table table = Table.create("Estatísticas dos episódios:").addColumns(media, menorAvaliacao, maiorAvaliacao, qtdEps);
         System.out.println(table);
     }
 }
