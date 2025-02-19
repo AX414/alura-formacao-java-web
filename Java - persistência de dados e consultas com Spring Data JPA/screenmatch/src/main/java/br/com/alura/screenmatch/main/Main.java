@@ -19,12 +19,11 @@ public class Main {
     private final String API_KEY = "&apikey=6585022c";
     private final SerieRepository serieRepository;
     private final EpisodioRepository episodioRepository;
-    private Scanner lerString = new Scanner(System.in);
-    private Scanner lerInt = new Scanner(System.in);
-    private Scanner lerDouble = new Scanner(System.in);
-    private ConsumoAPI consumoAPI = new ConsumoAPI();
-    private ConverteDados conversor = new ConverteDados();
-    private List<DadosSerie> dadosSeries = new ArrayList<>();
+    private final Scanner lerString = new Scanner(System.in);
+    private final Scanner lerInt = new Scanner(System.in);
+    private final Scanner lerDouble = new Scanner(System.in);
+    private final ConsumoAPI consumoAPI = new ConsumoAPI();
+    private final ConverteDados conversor = new ConverteDados();
 
     public Main(SerieRepository serieRepository, EpisodioRepository episodioRepository) {
         this.serieRepository = serieRepository;
@@ -52,8 +51,7 @@ public class Main {
     }
 
     private void menu1() {
-        int opcao = 0;
-
+        int opcao;
         System.out.println("\nDigite o nome da série para efetuar a consulta: ");
         var nome = lerString.nextLine();
         var json = consumoAPI.obterDados(ENDERECO + nome.replace(" ", "+") + API_KEY);
@@ -63,7 +61,9 @@ public class Main {
         if (dados == null) {
             System.out.println("\nNenhum resultado encontrado.");
         } else {
-            List<DadosTemporada> temporadas = new ArrayList<>();
+            List<DadosTemporada> temporadas = new ArrayList<DadosTemporada>();
+            List<DadosEpisodios> todosEpisodiosDeTodasTemporadas = new ArrayList<DadosEpisodios>();
+            List<Episodio> episodios = new ArrayList<Episodio>();
 
             verificaUnicidadeSerieNoBD(dados);
 
@@ -137,25 +137,45 @@ public class Main {
     }
 
     private void menu2() {
-        int opcao = 0;
+        int opcao;
         do {
             System.out.println("\n<Menu>");
             System.out.println("1  -> Apresentar todas as séries pesquisadas.");
             System.out.println("2  -> Apresentar todas as séries que um determinado ator trabalhou.");
             System.out.println("3  -> Apresentar as top 5 melhores séries.");
+            System.out.println("4  -> Apresentar séries por categoria.");
+            System.out.println("5  -> Filtrar por total de temporadas e avaliação.");
+            System.out.println("6  -> Apresentar episódio por trecho do título.");
+            System.out.println("7  -> Apresentar top 5 melhores episódios de uma série.");
+            System.out.println("8  -> Apresentar episódios de uma série a partir de uma data.");
             System.out.println("0  -> Encerrar consulta.");
             System.out.println("\n\nSelecione uma das opções do menu para prosseguir: ");
             opcao = lerInt.nextInt();
 
             switch (opcao) {
                 case 1:
-                    listarSeriesBuscadas();
+                    apresentarSeriesBuscadas();
                     break;
                 case 2:
-                    listarSeriesPorAtor();
+                    apresentarSeriesPorAtor();
                     break;
                 case 3:
-                    listarTop5Series();
+                    apresentarTop5Series();
+                    break;
+                case 4:
+                    apresentarSeriesPorCategoria();
+                    break;
+                case 5:
+                    filtrarPorTotalTemporadasEAvaliacao();
+                    break;
+                case 6:
+                    apresentarEpisodioPorTrechoDoTitulo();
+                    break;
+                case 7:
+                    apresentarTop5MelhoresEpisodios();
+                    break;
+                case 8:
+                    apresentarEpisodiosPorData();
                     break;
                 case 0:
                     System.out.println("\nEncerrando a consulta.");
@@ -268,7 +288,7 @@ public class Main {
             e.printStackTrace();
         }
     }
-    
+
     //1
     private List<DadosTemporada> apresentandoTodosOsEpisodiosETemporadas(List<DadosTemporada> temporadas, String json, String nome, DadosSerie dados) {
         try {
@@ -451,7 +471,7 @@ public class Main {
     }
 
     //10
-    private void listarSeriesBuscadas() {
+    private void apresentarSeriesBuscadas() {
         try {
             List<Serie> series = serieRepository.findAll();
             imprimirSeries(series);
@@ -462,7 +482,7 @@ public class Main {
     }
 
     //11
-    private void listarSeriesPorAtor() {
+    private void apresentarSeriesPorAtor() {
         try {
             System.out.println("\nDigite o nome do ator: ");
             var nomeAtor = lerString.nextLine();
@@ -474,7 +494,13 @@ public class Main {
 
             //Apresentando series que o ator trabalhou com a avaliação maior que o valor inserido
             List<Serie> series = serieRepository.findDistinctByAtoresContainingIgnoreCaseAndAvaliacaoGreaterThanEqual(nomeAtor, avaliacaoSerie);
-            imprimirSeries(series);
+
+            if (!series.isEmpty()) {
+                imprimirSeries(series);
+            } else {
+                System.out.println("\nNenhuma série foi encontrada.");
+            }
+
         } catch (Exception e) {
             System.out.println("\nOcorreu um erro durante a consulta: \n");
             e.printStackTrace();
@@ -482,7 +508,7 @@ public class Main {
     }
 
     //12
-    private void listarTop5Series() {
+    private void apresentarTop5Series() {
         try {
             List<Serie> series = serieRepository.findDistinctTop5ByOrderByAvaliacaoDesc();
             imprimirSeries(series);
@@ -493,7 +519,7 @@ public class Main {
     }
 
     //13
-    private void listarSeriesPorCategoria() {
+    private void apresentarSeriesPorCategoria() {
         try {
             System.out.println("\nDigite a categoria de filmes:");
             var categoriaDigitada = lerString.nextLine();
@@ -517,6 +543,104 @@ public class Main {
         }
     }
 
+    //14
+    private void filtrarPorTotalTemporadasEAvaliacao() {
+        try {
+            System.out.println("\nDigite a quantia de temporadas que deve ser igual ou menor:");
+            var totalTemporadas = lerInt.nextInt();
+
+            System.out.println("\nDigite a avaliação mínima:");
+            var avaliacao = lerDouble.nextDouble();
+
+            List<Serie> series = serieRepository.findByTotalTemporadasLessThanEqualAndAvaliacaoGreaterThanEqual(totalTemporadas, avaliacao);
+
+            if (!series.isEmpty()) {
+                imprimirSeries(series);
+            } else {
+                System.out.println("\nNão há séries cadastradas com essa categoria.");
+            }
+
+        } catch (Exception e) {
+            System.out.println("\nOcorreu um erro durante a consulta: \n");
+            e.printStackTrace();
+        }
+    }
+
+    //15
+    private void apresentarEpisodioPorTrechoDoTitulo() {
+        try {
+            System.out.println("\nDigite o nome do episódio: ");
+            var nome = lerString.nextLine();
+
+            List<Episodio> episodios = episodioRepository.findByTrechoTitulo(nome);
+
+            if (!episodios.isEmpty()) {
+                imprimirEpisodios(episodios);
+            } else {
+                System.out.println("\nNenhum episódio foi encontrado.");
+            }
+
+        } catch (Exception e) {
+            System.out.println("\nOcorreu um erro durante a consulta: \n");
+            e.printStackTrace();
+        }
+    }
+
+
+    //16
+    private void apresentarTop5MelhoresEpisodios() {
+        try {
+            System.out.println("\nDigite o título da série: ");
+            var tituloSerie = lerString.nextLine();
+
+            List<Episodio> episodios = episodioRepository.findDistinctTop5BySerieTituloAndAvaliacaoIsNotNullOrderByAvaliacaoDesc(tituloSerie);
+
+            if (!episodios.isEmpty()) {
+                imprimirEpisodios(episodios);
+            } else {
+                System.out.println("\nNenhum episódio foi encontrado.");
+            }
+
+        } catch (Exception e) {
+            System.out.println("\nOcorreu um erro durante a consulta: \n");
+            e.printStackTrace();
+        }
+
+    }
+
+    //17
+    private void apresentarEpisodiosPorData() {
+        try {
+            System.out.println("\nDigite o título da série: ");
+            var tituloSerie = lerString.nextLine();
+
+            System.out.println("\nDigite a data (formato dd-MM-yyyy): ");
+            String dataInput = lerString.nextLine();
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+            try {
+                LocalDate dataLancamento = LocalDate.parse(dataInput, formatter);
+
+                List<Episodio> episodios = episodioRepository.findDistinctBySerieTituloAndDataLancamentoGreaterThanEqual(tituloSerie, dataLancamento);
+
+                if (!episodios.isEmpty()) {
+                    imprimirEpisodios(episodios);
+                } else {
+                    System.out.println("\nNenhum episódio foi encontrado.");
+                }
+
+            } catch (java.time.format.DateTimeParseException ex) {
+                System.out.println("\nErro: A data fornecida está em um formato inválido. " +
+                        "Por favor, utilize o formato dd-MM-yyyy.");
+            }
+
+        } catch (Exception e) {
+            System.out.println("\nOcorreu um erro durante a consulta: \n");
+            e.printStackTrace();
+        }
+    }
+
     private void imprimirSeries(List<Serie> series) {
         StringColumn nomes = StringColumn.create("Nome", series.stream().map(Serie::getTitulo).toArray(String[]::new));
         StringColumn categorias = StringColumn.create("Categoria", series.stream().map(serie -> serie.getCategoria().name()).toArray(String[]::new));
@@ -528,10 +652,12 @@ public class Main {
     }
 
     public void imprimirEpisodios(List<Episodio> episodios) {
-        StringColumn titulos = StringColumn.create("Títulos", episodios.stream().map(Episodio::getTitulo).toArray(String[]::new));
-        IntColumn temporadas = IntColumn.create("Temporadas", episodios.stream().map(Episodio::getTemporada).toArray(Integer[]::new));
+        StringColumn series = StringColumn.create("Série", episodios.stream().map(e -> e.getSerie().getTitulo()).toArray(String[]::new));
+        StringColumn titulos = StringColumn.create("Título", episodios.stream().map(Episodio::getTitulo).toArray(String[]::new));
+        DateColumn dataLancamento = DateColumn.create("Data de Lançamento", episodios.stream().map(Episodio::getDataLancamento).toArray(LocalDate[]::new));
+        IntColumn temporadas = IntColumn.create("Temporada", episodios.stream().map(Episodio::getTemporada).toArray(Integer[]::new));
         DoubleColumn avaliacoes = DoubleColumn.create("Avaliação", episodios.stream().map(Episodio::getAvaliacao).toArray(Double[]::new));
-        Table table = Table.create("Episódios do BD:").addColumns(titulos, temporadas, avaliacoes);
+        Table table = Table.create("Episódios do BD:").addColumns(series, titulos, dataLancamento, temporadas, avaliacoes);
         System.out.println(table);
     }
 
