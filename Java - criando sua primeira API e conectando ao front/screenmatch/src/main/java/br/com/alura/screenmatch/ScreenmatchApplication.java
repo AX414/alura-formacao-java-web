@@ -4,8 +4,10 @@ package br.com.alura.screenmatch;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
+@ComponentScan(basePackages = "br.com.alura.screenmatch")
 public class ScreenmatchApplication {
 
     public static void main(String[] args) {

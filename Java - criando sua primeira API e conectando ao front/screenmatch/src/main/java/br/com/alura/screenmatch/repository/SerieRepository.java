@@ -13,4 +13,5 @@ public interface SerieRepository extends JpaRepository<Serie, Long>{
     List<Serie> findDistinctTop5ByOrderByAvaliacaoDesc();
     List<Serie> findDistinctByCategoria(Categoria categoria);
     List<Serie> findByTotalTemporadasLessThanEqualAndAvaliacaoGreaterThanEqual(int totalTemporadas, Double avaliacao);
+    List<Serie> findTop5ByOrderByEpisodiosDataLancamentoDesc();
 }
