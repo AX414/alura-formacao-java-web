@@ -1,4 +1,4 @@
-/*
+
 package br.com.alura.screenmatch;
 
 import br.com.alura.screenmatch.main.Main;
@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import io.github.cdimascio.dotenv.Dotenv;
 
 @SpringBootApplication
-public class ScreenmatchApplication implements CommandLineRunner {
+public class ScreenmatchApplicationSEMWEB implements CommandLineRunner {
 
     //Injeção de dependencia = delega a responsabilidade de instanciar uma
     //classe que precisamos usar toda hora
@@ -35,4 +35,3 @@ public class ScreenmatchApplication implements CommandLineRunner {
         main.consultarAPI();
     }
 }
-*/

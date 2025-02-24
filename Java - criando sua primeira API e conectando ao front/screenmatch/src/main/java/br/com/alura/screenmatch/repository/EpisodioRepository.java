@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface EpisodioRepository extends JpaRepository<Episodio, Long> {
 
-    Optional<Episodio> findFirstBySerieTituloAndTituloContainingIgnoreCase(String tituloSerie, String tituloEpisodio);
+    Optional<Episodio> findFirstBySerie_TituloAndTituloIgnoreCase(String tituloSerie, String tituloEpisodio);
 
     List<Episodio> findDistinctTop10BySerieTituloAndAvaliacaoIsNotNullOrderByAvaliacaoDesc(String tituloSerie);
 

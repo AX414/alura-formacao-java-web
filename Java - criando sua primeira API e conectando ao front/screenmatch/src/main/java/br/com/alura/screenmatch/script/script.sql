@@ -9,7 +9,16 @@ poster as "Link do poster"
 from serie ORDER BY titulo;
 
 -- Apresenta todos os episódios da série de id=6
-select count(distinct id) as "Quantia de episódios" from episodios where serie_id=1;
+select count(distinct id) as "Quantia de episódios" from episodios where serie_id=6;
+
+-- Deletando duplicados
+DELETE FROM episodios e
+WHERE e.id NOT IN (
+    SELECT MIN(e.id) 
+    FROM episodios e
+    JOIN serie s ON e.serie_id = s.id
+    GROUP BY e.serie_id, e.titulo
+);
 
 -- Apresenta a quantia de episódios totais de cada série do banco
 SELECT s.id as "Identificador", s.titulo as "Título da série", COUNT(DISTINCT e.id) as "Quantia de episódios" 
@@ -47,18 +56,9 @@ JOIN serie s ON e.serie_id = s.id
 GROUP BY s.titulo, e.titulo
 HAVING COUNT(*) > 1;
 
--- Deletando duplicados
-DELETE FROM episodios e
-WHERE e.id NOT IN (
-    SELECT MIN(e.id) 
-    FROM episodios e
-    JOIN serie s ON e.serie_id = s.id
-    GROUP BY e.serie_id, e.titulo
-);
-
 -- Inserindo novo ENUM na categoria
---ALTER TABLE serie DROP CONSTRAINT serie_categoria_check;
+-- ALTER TABLE serie DROP CONSTRAINT serie_categoria_check;
 
---ALTER TABLE serie ADD CONSTRAINT serie_categoria_check 
---CHECK (categoria IN ('ACAO', 'ROMANCE', 'COMEDIA', 'DRAMA', 'CRIME', 'ANIMACAO', 'DESCONHECIDO'));
+-- ALTER TABLE serie ADD CONSTRAINT serie_categoria_check 
+-- CHECK (categoria IN ('ACAO', 'ROMANCE', 'COMEDIA', 'DRAMA', 'CRIME', 'ANIMACAO', 'DESCONHECIDO'));
 

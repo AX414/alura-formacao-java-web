@@ -192,7 +192,7 @@ public class Main {
             // Verifica se já existe uma série com o mesmo título no banco
             Optional<Serie> serieExistente = serieRepository.findByTitulo(dados.titulo());
 
-            // 🔍 Obtém os dados mais recentes da API
+            //Obtém os dados mais recentes da API
             String json = consumoAPI.obterDados(ENDERECO + dados.titulo().replace(" ", "+") + API_KEY);
             DadosSerie dadosAtualizados = conversor.obterDados(json, DadosSerie.class);
 
@@ -246,30 +246,27 @@ public class Main {
     public void verificaUnicidadeEpisodioNoBD(String tituloSerie, DadosEpisodios dadosEpisodio) {
         try {
             // Verifica se já existe um episódio com o mesmo título na série
-            Optional<Episodio> episodioExistente = episodioRepository.findFirstBySerieTituloAndTituloContainingIgnoreCase(dadosEpisodio.titulo(), tituloSerie);
+            Optional<Episodio> episodioExistente = episodioRepository.findFirstBySerie_TituloAndTituloIgnoreCase(tituloSerie, dadosEpisodio.titulo());
             Optional<Serie> serieEncontrada = serieRepository.findByTitulo(tituloSerie);
 
-            if (episodioExistente.isEmpty()) {
-                // Se o episódio não existir, cria e salva um novo episódio
-                Episodio novoEpisodio = new Episodio(dadosEpisodio);
-                novoEpisodio.setSerie(serieEncontrada.get());
-                episodioRepository.save(novoEpisodio);
-                System.out.println("\nNOVO EPISÓDIO INSERIDO NO BANCO: " + novoEpisodio);
-            } else {
-                // Se o episódio já existir, verifica se há mudanças antes de atualizar
-                Episodio episodioAtualizado = episodioExistente.get();
+            if (serieEncontrada.isEmpty()) {
+                System.out.println("\nSérie não encontrada no banco: " + tituloSerie);
+                return;
+            }
 
+            if (episodioExistente.isPresent()) {
+                Episodio episodioAtualizado = episodioExistente.get();
                 boolean alterado = false;
 
                 // Atualiza a avaliação, verificando se é válida
                 try {
                     double novaAvaliacao = Double.parseDouble(dadosEpisodio.avaliacao());
-                    if (episodioAtualizado.getAvaliacao() != novaAvaliacao) {
+                    if (episodioAtualizado.getAvaliacao() == null || Double.compare(episodioAtualizado.getAvaliacao(), novaAvaliacao) != 0) {
                         episodioAtualizado.setAvaliacao(novaAvaliacao);
                         alterado = true;
                     }
                 } catch (NumberFormatException e) {
-                    if (episodioAtualizado.getAvaliacao() != 0.0) {
+                    if (episodioAtualizado.getAvaliacao() == null || Double.compare(episodioAtualizado.getAvaliacao(), 0.0) != 0) {
                         episodioAtualizado.setAvaliacao(0.0);
                         alterado = true;
                     }
@@ -282,13 +279,19 @@ public class Main {
                     episodioRepository.save(episodioAtualizado);
                     System.out.println("\nEPISÓDIO ATUALIZADO NO BANCO.");
                 }
+                return;
             }
+
+            // Se o episódio não existir, cria e salva um novo episódio
+            Episodio novoEpisodio = new Episodio(dadosEpisodio);
+            novoEpisodio.setSerie(serieEncontrada.get());
+            episodioRepository.save(novoEpisodio);
+            System.out.println("\nNOVO EPISÓDIO INSERIDO NO BANCO: " + novoEpisodio);
         } catch (Exception e) {
             System.out.println("\nOcorreu um erro ao verificar a unicidade do episódio no banco:\n");
             e.printStackTrace();
         }
     }
-
     //1
     private List<DadosTemporada> apresentandoTodosOsEpisodiosETemporadas(List<DadosTemporada> temporadas, String json, String nome, DadosSerie dados) {
         try {
@@ -429,7 +432,7 @@ public class Main {
             var tituloEpisodio = lerString.nextLine();
 
             //Optional é utilizado quando os valores podem ou não serem retornados
-            Optional<Episodio> episodioBuscado = episodioRepository.findFirstBySerieTituloAndTituloContainingIgnoreCase(tituloSerie, tituloEpisodio);
+            Optional<Episodio> episodioBuscado = episodioRepository.findFirstBySerie_TituloAndTituloIgnoreCase(tituloSerie, tituloEpisodio);
             //Procura se existe
             episodioBuscado.ifPresent(episodio -> System.out.println("\nEpisódio encontrado:\n\n| " + episodio.getTitulo() + " | Temporada: " + episodio.getTemporada() + " |"));
             if (episodioBuscado.isEmpty()) {
