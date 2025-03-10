@@ -23,4 +23,7 @@ public interface EpisodioRepository extends JpaRepository<Episodio, Long> {
     List<Episodio> findByTrechoTitulo(@Param("trechoTitulo") String trechoTitulo);
     List<Episodio> findDistinctTop5BySerieTituloAndAvaliacaoIsNotNullOrderByAvaliacaoDesc(String tituloSerie);
     List<Episodio> findDistinctBySerieTituloAndDataLancamentoGreaterThanEqual(String tituloSerie, LocalDate dataLancamento);
+
 }
+
+
